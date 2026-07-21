@@ -1,16 +1,18 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Upload, FileText, Trash2, Loader2, CheckCircle2, AlertCircle, ArrowUpRight } from 'lucide-react';
+import { Upload, FileText, Trash2, Loader2, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
 import { api, type Resume } from '@/lib/api-client';
+import { ScoreCard } from '@/components/ui/score-card';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export default function ResumePage() {
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [scoring, setScoring] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [selected, setSelected] = useState<Resume | null>(null);
-  const [scoring, setScoring] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -35,6 +37,16 @@ export default function ResumePage() {
       const created = await api.resume.upload(file);
       setResumes((prev) => [created, ...prev]);
       setSelected(created);
+      setScoring(created._id);
+      try {
+        const score = await api.analysis.resumeScore({ resumeId: created._id });
+        created.parsedContent = score;
+        setSelected({ ...created });
+        setResumes((prev) => prev.map((r) => (r._id === created._id ? { ...r, parsedContent: score } : r)));
+      } catch {
+        // AI quota issue — still show the resume
+      }
+      setScoring(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
@@ -48,34 +60,14 @@ export default function ResumePage() {
     if (selected?._id === id) setSelected(null);
   };
 
-  const handleScore = async () => {
-    if (!selected) return;
-    setScoring(true);
-    try {
-      const score = await api.analysis.resumeScore({ resumeId: selected._id });
-      setSelected({ ...selected, parsedContent: score });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Scoring failed');
-    } finally {
-      setScoring(false);
-    }
-  };
-
-  const atsColor = (r?: string) => {
-    if (r === 'excellent') return 'text-emerald-600 bg-emerald-50';
-    if (r === 'good') return 'text-blue-600 bg-blue-50';
-    if (r === 'fair') return 'text-amber-600 bg-amber-50';
-    return 'text-rose-600 bg-rose-50';
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Resume</h2>
-          <p className="text-muted-foreground mt-1">Upload and analyze your resume</p>
+          <h2 className="text-3xl font-bold tracking-tight">Resume Analysis</h2>
+          <p className="text-muted-foreground mt-1">Upload your resume for ATS analysis and scoring</p>
         </div>
-        <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 active:scale-[0.98] transition-all">
+        <label className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 active:scale-[0.98] transition-all">
           <Upload className="h-4 w-4" />
           {uploading ? 'Uploading...' : 'Upload Resume'}
           <input type="file" accept=".pdf,.docx" className="hidden" onChange={handleUpload} disabled={uploading} />
@@ -83,7 +75,7 @@ export default function ResumePage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        <div className="flex items-center gap-2 rounded-xl bg-danger-light px-4 py-3 text-sm text-danger">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
         </div>
@@ -93,19 +85,28 @@ export default function ResumePage() {
         <div className="lg:col-span-2 space-y-3">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Uploaded Resumes</h3>
           {loading ? (
-            <div className="flex items-center justify-center py-12 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => <div key={i} className="h-16 rounded-xl bg-stone-100 animate-pulse" />)}
             </div>
           ) : resumes.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-              No resumes uploaded yet
-            </div>
+            <EmptyState
+              icon={<FileText className="h-7 w-7" />}
+              title="No Resume Yet"
+              description="Upload a PDF or DOCX resume to get started."
+              action={
+                <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 transition-all">
+                  <Upload className="h-4 w-4" />
+                  Upload Resume
+                  <input type="file" accept=".pdf,.docx" className="hidden" onChange={handleUpload} disabled={uploading} />
+                </label>
+              }
+            />
           ) : (
             <div className="space-y-2">
               {resumes.map((r) => (
                 <button
                   key={r._id}
-                  onClick={() => setSelected(r)}
+                  onClick={() => { setSelected(r); if (!r.parsedContent) { setScoring(r._id); api.analysis.resumeScore({ resumeId: r._id }).then((s) => { r.parsedContent = s; setSelected({ ...r }); }).catch(() => {}).finally(() => setScoring(null)); }}}
                   className={`w-full flex items-center gap-3 rounded-xl border p-4 text-left text-sm transition-colors ${
                     selected?._id === r._id
                       ? 'border-primary bg-primary/5'
@@ -117,9 +118,7 @@ export default function ResumePage() {
                   </span>
                   <div className="flex-1 min-w-0">
                     <div className="font-medium truncate">{r.fileName}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {(r.fileSize / 1024).toFixed(0)} KB
-                    </div>
+                    <div className="text-xs text-muted-foreground">{(r.fileSize / 1024).toFixed(0)} KB</div>
                   </div>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDelete(r._id); }}
@@ -135,65 +134,113 @@ export default function ResumePage() {
 
         <div className="lg:col-span-3">
           {!selected ? (
-            <div className="rounded-xl border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
-              Select or upload a resume to view analysis
+            <EmptyState
+              icon={<FileText className="h-7 w-7" />}
+              title="Select a Resume"
+              description="Choose a resume from the list to view its analysis."
+            />
+          ) : scoring === selected._id && !selected.parsedContent ? (
+            <div className="rounded-2xl border border-border p-8 text-center space-y-3">
+              <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
+              <p className="text-sm font-medium">Analyzing your resume...</p>
+              <div className="flex justify-center gap-2">
+                {['Parsing', 'Extracting', 'Scoring'].map((step, i) => (
+                  <span key={step} className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <span className={`h-1.5 w-1.5 rounded-full ${i < 2 ? 'bg-emerald-500' : 'bg-stone-300'}`} />
+                    {step}
+                  </span>
+                ))}
+              </div>
             </div>
           ) : (
-            <div className="rounded-xl border border-border p-6 space-y-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold text-lg">{selected.fileName}</h3>
-                  <p className="text-xs text-muted-foreground">ID: {selected._id}</p>
-                </div>
-                {selected.parsedContent ? (
-                  <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium ${atsColor(selected.parsedContent.atsRating)}`}>
-                    <CheckCircle2 className="h-3 w-3" />
-                    {selected.parsedContent.atsRating}
-                  </span>
-                ) : (
-                  <button
-                    onClick={handleScore}
-                    disabled={scoring}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-full bg-primary px-4 text-xs font-medium text-white shadow-sm hover:opacity-90 transition-opacity"
-                  >
-                    {scoring ? <Loader2 className="h-3 w-3 animate-spin" /> : <ArrowUpRight className="h-3 w-3" />}
-                    {scoring ? 'Scoring...' : 'Analyze'}
-                  </button>
-                )}
-              </div>
-
-              {selected.parsedContent && (
+            <div className="space-y-4">
+              {selected.parsedContent ? (
                 <>
-                  <div className="flex items-center gap-4 p-4 rounded-xl bg-stone-50">
-                    <div className="text-4xl font-bold text-primary">{selected.parsedContent.overallScore}</div>
-                    <div className="text-sm text-muted-foreground">ATS Score</div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <ScoreCard
+                      label="ATS Score"
+                      value={selected.parsedContent.overallScore}
+                      subtitle={selected.fileName}
+                      why={`Your resume scored in the ${selected.parsedContent.atsRating} range. ${selected.parsedContent.missingKeywords.length > 0 ? `Missing ${selected.parsedContent.missingKeywords.length} key terms.` : 'All key terms detected.'}`}
+                      size="lg"
+                    />
+                    <ScoreCard
+                      label="Keyword Coverage"
+                      value={Math.max(0, 100 - selected.parsedContent.missingKeywords.length * 8)}
+                      subtitle="Based on detected keywords"
+                      why={selected.parsedContent.missingKeywords.length > 0 ? `Missing: ${selected.parsedContent.missingKeywords.slice(0, 4).join(', ')}` : 'All expected keywords found'}
+                      trend={selected.parsedContent.missingKeywords.length > 3 ? 'down' : 'up'}
+                    />
                   </div>
 
+                  {selected.parsedContent.formattingIssues.length > 0 && (
+                    <div className="rounded-2xl border border-border p-5 space-y-3">
+                      <h4 className="text-sm font-medium flex items-center gap-2">
+                        <XCircle className="h-4 w-4 text-rose-500" />
+                        Formatting Issues
+                      </h4>
+                      {selected.parsedContent.formattingIssues.map((issue) => (
+                        <div key={issue} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <span className="flex h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0 mt-1.5" />
+                          {issue}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   {selected.parsedContent.missingKeywords.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-medium mb-2">Missing Keywords</h4>
-                      <div className="flex flex-wrap gap-1.5">
+                    <div className="rounded-2xl border border-border p-5 space-y-3">
+                      <h4 className="text-sm font-medium flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-amber-500" />
+                        Missing Keywords
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
                         {selected.parsedContent.missingKeywords.map((k) => (
-                          <span key={k} className="rounded-full bg-rose-50 px-2.5 py-1 text-xs text-rose-700">{k}</span>
+                          <span key={k} className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-700 border border-rose-200">
+                            <XCircle className="h-3 w-3" />
+                            {k}
+                          </span>
                         ))}
                       </div>
                     </div>
                   )}
 
+                  {selected.parsedContent.sectionSuggestions.length > 0 && (
+                    <div className="rounded-2xl border border-border p-5 space-y-3">
+                      <h4 className="text-sm font-medium flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-info" />
+                        Section Suggestions
+                      </h4>
+                      {selected.parsedContent.sectionSuggestions.map((s, i) => (
+                        <div key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-info-light text-info text-xs font-medium shrink-0 mt-0.5">{i + 1}</span>
+                          {s}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   {selected.parsedContent.improvements.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-medium mb-2">Improvements</h4>
-                      <ul className="space-y-1.5">
-                        {selected.parsedContent.improvements.map((imp, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                            <span className="flex h-1.5 w-1.5 rounded-full bg-primary shrink-0 mt-1.5" />
-                            {imp}
-                          </li>
-                        ))}
-                      </ul>
+                    <div className="rounded-2xl border border-border p-5 space-y-3">
+                      <h4 className="text-sm font-medium flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                        Improvements
+                      </h4>
+                      {selected.parsedContent.improvements.map((imp, i) => (
+                        <div key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0 mt-1.5" />
+                          {imp}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </>
+              ) : (
+                <EmptyState
+                  icon={<FileText className="h-7 w-7" />}
+                  title="Not Analyzed Yet"
+                  description="Click on a resume to trigger AI analysis, or re-upload for a fresh scan."
+                />
               )}
             </div>
           )}

@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, Loader2, Building2, ArrowUpRight } from 'lucide-react';
+import { Plus, Trash2, Loader2, Building2, ArrowUpRight, FileText } from 'lucide-react';
 import { api, type JobDescription } from '@/lib/api-client';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export default function JobDescriptionPage() {
   const [jds, setJds] = useState<JobDescription[]>([]);
@@ -128,13 +129,15 @@ export default function JobDescriptionPage() {
         <div className="lg:col-span-2 space-y-3">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">All JDs</h3>
           {loading ? (
-            <div className="flex items-center justify-center py-12 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => <div key={i} className="h-16 rounded-xl bg-stone-100 animate-pulse" />)}
             </div>
           ) : jds.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-              No job descriptions yet
-            </div>
+            <EmptyState
+              icon={<FileText className="h-7 w-7" />}
+              title="No Job Descriptions"
+              description="Add a job description to analyze."
+            />
           ) : (
             <div className="space-y-2">
               {jds.map((j) => (
@@ -168,9 +171,11 @@ export default function JobDescriptionPage() {
 
         <div className="lg:col-span-3">
           {!selected ? (
-            <div className="rounded-xl border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
-              Select or create a job description to view analysis
-            </div>
+            <EmptyState
+              icon={<Building2 className="h-7 w-7" />}
+              title="Select a JD"
+              description="Choose a job description from the list to view its analysis."
+            />
           ) : (
             <div className="rounded-xl border border-border p-6 space-y-6">
               <div>

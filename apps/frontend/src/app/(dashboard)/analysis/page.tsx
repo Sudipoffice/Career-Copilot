@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, Target, ArrowRight, CheckCircle2, XCircle, Lightbulb, FileText } from 'lucide-react';
+import { Loader2, Target, CheckCircle2, XCircle, Lightbulb, FileText, ArrowRight, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
 import { api, type Resume, type JobDescription, type SkillGapResult } from '@/lib/api-client';
+import { ScoreCard } from '@/components/ui/score-card';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export default function AnalysisPage() {
   const [resumes, setResumes] = useState<Resume[]>([]);
@@ -43,17 +46,24 @@ export default function AnalysisPage() {
     }
   };
 
-  const matchColor = (pct: number) => {
-    if (pct >= 80) return 'text-emerald-600';
-    if (pct >= 60) return 'text-amber-600';
-    return 'text-rose-600';
-  };
-
-  const matchBg = (pct: number) => {
-    if (pct >= 80) return 'bg-emerald-50';
-    if (pct >= 60) return 'bg-amber-50';
-    return 'bg-rose-50';
-  };
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Skill Gap Analysis</h2>
+          <p className="text-muted-foreground mt-1">Compare your resume against a job description</p>
+        </div>
+        <div className="grid lg:grid-cols-5 gap-6">
+          <div className="lg:col-span-2 space-y-3">
+            {[1, 2, 3].map((i) => <div key={i} className="h-12 rounded-xl bg-stone-100 animate-pulse" />)}
+          </div>
+          <div className="lg:col-span-3">
+            <div className="h-64 rounded-2xl bg-stone-100 animate-pulse" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -63,21 +73,36 @@ export default function AnalysisPage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          <Loader2 className="h-4 w-4 shrink-0" />
+        <div className="flex items-center gap-2 rounded-xl bg-danger-light px-4 py-3 text-sm text-danger">
+          <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
         </div>
       )}
 
-      {loading ? (
-        <div className="flex items-center justify-center py-20 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
+      {resumes.length === 0 || jds.length === 0 ? (
+        <div className="grid lg:grid-cols-2 gap-6">
+          {resumes.length === 0 && (
+            <EmptyState
+              icon={<FileText className="h-7 w-7" />}
+              title="No Resume Uploaded"
+              description="Upload a resume first to run an analysis."
+              action={<Link href="/resume" className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 transition-all"><FileText className="h-4 w-4" />Upload Resume</Link>}
+            />
+          )}
+          {jds.length === 0 && (
+            <EmptyState
+              icon={<FileText className="h-7 w-7" />}
+              title="No Job Description"
+              description="Add a job description to compare against."
+              action={<Link href="/job-description" className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 transition-all"><FileText className="h-4 w-4" />Add JD</Link>}
+            />
+          )}
         </div>
       ) : (
         <>
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Resume</label>
+              <label className="text-sm font-medium mb-1.5 block">Your Resume</label>
               <select
                 value={selectedResume}
                 onChange={(e) => setSelectedResume(e.target.value)}
@@ -90,7 +115,7 @@ export default function AnalysisPage() {
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Job Description</label>
+              <label className="text-sm font-medium mb-1.5 block">Target Job</label>
               <select
                 value={selectedJd}
                 onChange={(e) => setSelectedJd(e.target.value)}
@@ -115,85 +140,123 @@ export default function AnalysisPage() {
             </button>
           </div>
 
-          {result && (
-            <div className="rounded-xl border border-border overflow-hidden">
-              <div className={`flex items-center gap-4 p-6 ${matchBg(result.matchPercentage)}`}>
-                <div className={`text-5xl font-bold ${matchColor(result.matchPercentage)}`}>
-                  {result.matchPercentage}%
-                </div>
-                <div>
-                  <div className="font-semibold">Match Score</div>
-                  <div className="text-sm text-muted-foreground">
-                    {result.matchPercentage >= 80 ? 'Strong match!' : result.matchPercentage >= 60 ? 'Moderate match' : 'Needs improvement'}
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-6 space-y-6">
-                <div className="grid sm:grid-cols-2 gap-6">
-                  <div>
-                    <div className="flex items-center gap-2 text-sm font-medium text-emerald-700 mb-3">
-                      <CheckCircle2 className="h-4 w-4" />
-                      Matching Skills ({result.matchingSkills.length})
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {result.matchingSkills.map((s) => (
-                        <span key={s} className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs text-emerald-700">{s}</span>
-                      ))}
-                      {result.matchingSkills.length === 0 && <span className="text-xs text-muted-foreground">None</span>}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 text-sm font-medium text-rose-700 mb-3">
-                      <XCircle className="h-4 w-4" />
-                      Missing Skills ({result.missingSkills.length})
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {result.missingSkills.map((s) => (
-                        <span key={s} className="rounded-full bg-rose-50 px-2.5 py-1 text-xs text-rose-700">{s}</span>
-                      ))}
-                      {result.missingSkills.length === 0 && <span className="text-xs text-muted-foreground">None</span>}
-                    </div>
-                  </div>
-                </div>
-
-                {result.recommendations.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 text-sm font-medium mb-3">
-                      <Lightbulb className="h-4 w-4 text-amber-500" />
-                      Recommendations
-                    </div>
-                    <ul className="space-y-2">
-                      {result.recommendations.map((r, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground bg-stone-50 rounded-xl p-3">
-                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium shrink-0 mt-0.5">
-                            {i + 1}
-                          </span>
-                          {r}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {result.resumeSuggestions.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 text-sm font-medium mb-3">
-                      <FileText className="h-4 w-4 text-blue-500" />
-                      Resume Suggestions
-                    </div>
-                    <ul className="space-y-2">
-                      {result.resumeSuggestions.map((s, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground bg-blue-50 rounded-xl p-3">
-                          <ArrowRight className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
-                          {s}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+          {analyzing && (
+            <div className="rounded-2xl border border-border p-8 text-center space-y-3">
+              <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
+              <p className="text-sm font-medium">Comparing your resume with the job description...</p>
+              <div className="flex justify-center gap-3">
+                {['Analyzing', 'Matching', 'Scoring'].map((step, i) => (
+                  <span key={step} className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <span className={`h-1.5 w-1.5 rounded-full ${i < 2 ? 'bg-emerald-500' : 'bg-stone-300'}`} />
+                    {step}
+                  </span>
+                ))}
               </div>
             </div>
+          )}
+
+          {result && (
+            <div className="space-y-4">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <ScoreCard
+                  label="Skill Match"
+                  value={result.matchPercentage}
+                  subtitle="Overall compatibility"
+                  why={`${result.matchingSkills.length} matching skills, ${result.missingSkills.length} gaps identified.`}
+                  size="lg"
+                  trend={result.matchPercentage >= 70 ? 'up' : 'down'}
+                />
+                <ScoreCard
+                  label="Coverage"
+                  value={result.matchingSkills.length + result.missingSkills.length > 0
+                    ? Math.round((result.matchingSkills.length / (result.matchingSkills.length + result.missingSkills.length)) * 100)
+                    : 0}
+                  subtitle="Skills you have vs. required"
+                  why={result.missingSkills.length > 0
+                    ? `You're missing ${result.missingSkills.length} of ${result.matchingSkills.length + result.missingSkills.length} required skills.`
+                    : 'All required skills covered.'}
+                />
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-4">
+                {result.matchingSkills.length > 0 && (
+                  <div className="rounded-2xl border border-border p-5 space-y-3">
+                    <h4 className="text-sm font-medium flex items-center gap-2 text-emerald-700">
+                      <CheckCircle2 className="h-4 w-4" />
+                      Matching Skills ({result.matchingSkills.length})
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {result.matchingSkills.map((s) => (
+                        <span key={s} className="inline-flex items-center gap-1 rounded-full bg-success-light px-3 py-1.5 text-xs font-medium text-success border border-emerald-200">
+                          <CheckCircle2 className="h-3 w-3" />
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {result.missingSkills.length > 0 && (
+                  <div className="rounded-2xl border border-border p-5 space-y-3">
+                    <h4 className="text-sm font-medium flex items-center gap-2 text-rose-700">
+                      <XCircle className="h-4 w-4" />
+                      Missing Skills ({result.missingSkills.length})
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {result.missingSkills.map((s) => (
+                        <span key={s} className="inline-flex items-center gap-1 rounded-full bg-danger-light px-3 py-1.5 text-xs font-medium text-danger border border-rose-200">
+                          <XCircle className="h-3 w-3" />
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {result.recommendations.length > 0 && (
+                <div className="rounded-2xl border border-border p-5 space-y-3">
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <Lightbulb className="h-4 w-4 text-amber-500" />
+                    Recommendations
+                  </h4>
+                  <div className="space-y-2">
+                    {result.recommendations.map((r, i) => (
+                      <div key={i} className="flex items-start gap-3 text-sm text-muted-foreground bg-stone-50 rounded-xl p-3">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium shrink-0">
+                          {i + 1}
+                        </span>
+                        {r}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {result.resumeSuggestions.length > 0 && (
+                <div className="rounded-2xl border border-border p-5 space-y-3">
+                  <h4 className="text-sm font-medium flex items-center gap-2 text-info">
+                    <FileText className="h-4 w-4" />
+                    Resume Suggestions
+                  </h4>
+                  <div className="space-y-2">
+                    {result.resumeSuggestions.map((s, i) => (
+                      <div key={i} className="flex items-start gap-2 text-sm text-muted-foreground bg-info-light rounded-xl p-3">
+                        <ArrowRight className="h-4 w-4 text-info shrink-0 mt-0.5" />
+                        {s}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {!analyzing && !result && (
+            <EmptyState
+              icon={<Target className="h-7 w-7" />}
+              title="Ready to Analyze"
+              description="Select a resume and job description above, then click Run Analysis."
+            />
           )}
         </>
       )}

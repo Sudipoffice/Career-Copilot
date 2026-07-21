@@ -1,20 +1,132 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Play } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { ArrowRight, Play, CheckCircle2, Loader2, FileText, Target, Sparkles, BookOpen } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const floatingBadges = [
-  { label: '92% Match', x: '60%', y: '15%', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  { label: 'ATS +18%', x: '75%', y: '35%', color: 'bg-blue-50 text-blue-700 border-blue-200' },
-  { label: 'Study Plan Ready', x: '55%', y: '60%', color: 'bg-violet-50 text-violet-700 border-violet-200' },
+const demoSteps = [
+  { label: 'Resume Uploaded', icon: FileText, duration: 800, color: 'text-emerald-600' },
+  { label: 'Analyzing Resume...', icon: Loader2, duration: 1200, color: 'text-blue-600' },
+  { label: 'ATS Score: 91%', icon: Target, duration: 600, color: 'text-emerald-600' },
+  { label: 'Skill Match: 84%', icon: CheckCircle2, duration: 600, color: 'text-emerald-600' },
+  { label: 'Questions Ready: 12', icon: Sparkles, duration: 600, color: 'text-violet-600' },
+  { label: 'Study Plan Built', icon: BookOpen, duration: 600, color: 'text-amber-600' },
 ];
 
-const dashboardCards = [
-  { label: 'Resume Score', value: '84', unit: '/100', color: 'from-orange-400 to-amber-500' },
-  { label: 'Skill Match', value: '76', unit: '%', color: 'from-emerald-400 to-teal-500' },
-  { label: 'Questions', value: '12', unit: '', color: 'from-blue-400 to-indigo-500' },
-];
+const missingSkills = ['Docker', 'GraphQL', 'CI/CD'];
+
+function DemoFlow() {
+  const [step, setStep] = useState(0);
+  const [showMissing, setShowMissing] = useState(false);
+
+  useEffect(() => {
+    if (step >= demoSteps.length) return;
+    const timer = setTimeout(() => setStep((s) => s + 1), demoSteps[step]!.duration);
+    return () => clearTimeout(timer);
+  }, [step]);
+
+  useEffect(() => {
+    if (step >= 3) {
+      const t = setTimeout(() => setShowMissing(true), 400);
+      return () => clearTimeout(t);
+    }
+    setShowMissing(false);
+  }, [step]);
+
+  return (
+    <div className="relative aspect-[4/3]">
+      <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-stone-50 rounded-3xl border border-border shadow-xl">
+        <div className="p-6 space-y-4">
+          <div className="flex items-center gap-2 pb-4 border-b border-border">
+            <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs font-medium text-muted-foreground">Live Analysis</span>
+          </div>
+
+          <div className="space-y-3 min-h-[200px]">
+            {demoSteps.slice(0, Math.min(step + 1, 5)).map((s, i) => (
+              <motion.div
+                key={s.label}
+                initial={{ opacity: 0, x: -10, height: 0 }}
+                animate={{ opacity: 1, x: 0, height: 'auto' }}
+                transition={{ duration: 0.3 }}
+                className={`flex items-center gap-3 rounded-xl border p-3 ${
+                  i === step && s.icon === Loader2
+                    ? 'border-blue-200 bg-blue-50'
+                    : 'border-transparent bg-white'
+                }`}
+              >
+                {s.icon === Loader2 && i === step ? (
+                  <Loader2 className={`h-4 w-4 animate-spin ${s.color}`} />
+                ) : (
+                  <CheckCircle2 className={`h-4 w-4 ${s.color}`} />
+                )}
+                <span className={`text-sm font-medium ${s.color}`}>{s.label}</span>
+                {i === 1 && step === 1 && (
+                  <div className="flex-1 h-1.5 rounded-full bg-stone-200 overflow-hidden ml-2">
+                    <motion.div
+                      className="h-full rounded-full bg-blue-500"
+                      initial={{ width: '0%' }}
+                      animate={{ width: '100%' }}
+                      transition={{ duration: 1.2, ease: 'easeInOut' }}
+                    />
+                  </div>
+                )}
+              </motion.div>
+            ))}
+
+            <AnimatePresence>
+              {showMissing && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="rounded-xl border border-rose-200 bg-rose-50 p-3"
+                >
+                  <div className="text-xs font-medium text-rose-700 mb-2">Missing Skills</div>
+                  <div className="flex flex-wrap gap-2">
+                    {missingSkills.map((skill) => (
+                      <motion.span
+                        key={skill}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.2 }}
+                        className="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-medium text-rose-700 border border-rose-200 shadow-sm"
+                      >
+                        {skill}
+                      </motion.span>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: step >= 5 ? 1 : 0 }}
+            className="rounded-xl bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200/50 p-4"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm">
+                <BookOpen className="h-4 w-4 text-amber-600" />
+                <span className="font-medium text-amber-800">7-Day Study Plan Ready</span>
+              </div>
+              <span className="text-xs text-amber-600">View →</span>
+            </div>
+          </motion.div>
+
+          {step < 2 && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center pt-2">
+              <span className="flex h-1.5 w-1.5 rounded-full bg-stone-300 animate-pulse" />
+              Analyzing your career profile...
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function Hero() {
   return (
@@ -56,11 +168,11 @@ export function Hero() {
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <a
-                href="#"
+                href="#how-it-works"
                 className="inline-flex h-12 items-center gap-2 rounded-full border border-border bg-white/60 px-8 text-sm font-medium text-foreground hover:bg-white hover:shadow-sm active:scale-[0.98] transition-all"
               >
                 <Play className="h-4 w-4" />
-                See Demo
+                See How It Works
               </a>
             </div>
 
@@ -85,87 +197,7 @@ export function Hero() {
             transition={{ duration: 0.7, delay: 0.2 }}
             className="relative hidden lg:block"
           >
-            <div className="relative aspect-[4/3]">
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-stone-50 rounded-3xl border border-border shadow-xl">
-                <div className="p-6 space-y-4">
-                  <div className="flex items-center gap-3 pb-4 border-b border-border">
-                    <div className="flex items-center gap-2 text-sm font-medium">
-                      <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
-                      Resume Uploaded
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span className="flex h-2 w-2 rounded-full bg-amber-500" />
-                      JD Pasted
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3">
-                    {dashboardCards.map((card) => (
-                      <div
-                        key={card.label}
-                        className="rounded-2xl bg-white border border-border p-4 shadow-sm"
-                      >
-                        <div className="text-xs text-muted-foreground mb-1">{card.label}</div>
-                        <div className="flex items-baseline gap-0.5">
-                          <span className="text-2xl font-bold">{card.value}</span>
-                          <span className="text-xs text-muted-foreground">{card.unit}</span>
-                        </div>
-                        <div className="mt-2 h-1.5 rounded-full bg-stone-100 overflow-hidden">
-                          <div
-                            className={`h-full rounded-full bg-gradient-to-r ${card.color}`}
-                            style={{ width: `${card.value}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="rounded-2xl bg-white border border-border p-4 shadow-sm">
-                    <div className="text-xs font-medium text-muted-foreground mb-3">
-                      Missing Skills
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {['Docker', 'Kubernetes', 'GraphQL', 'Redis'].map((skill) => (
-                        <span
-                          key={skill}
-                          className="inline-flex items-center rounded-full bg-rose-50 px-3 py-1 text-xs font-medium text-rose-700 border border-rose-200"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200/50 p-4 shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-xs font-medium text-amber-800">Study Plan</div>
-                        <div className="text-sm font-semibold text-amber-900 mt-0.5">
-                          7-Day Preparation Ready
-                        </div>
-                      </div>
-                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white text-xs font-bold">
-                        CC
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {floatingBadges.map((badge, i) => (
-                <motion.div
-                  key={badge.label}
-                  className={`absolute inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium shadow-md backdrop-blur-sm ${badge.color}`}
-                  style={{ left: badge.x, top: badge.y }}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 + i * 0.2, duration: 0.5 }}
-                >
-                  <span className="flex h-1.5 w-1.5 rounded-full bg-current" />
-                  {badge.label}
-                </motion.div>
-              ))}
-            </div>
+            <DemoFlow />
           </motion.div>
         </div>
       </div>

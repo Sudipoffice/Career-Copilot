@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2, BookOpen, Clock, CheckCircle2, Goal, ArrowRight } from 'lucide-react';
+import { Loader2, BookOpen, Clock, CheckCircle2, Goal, ArrowRight, AlertCircle } from 'lucide-react';
 import { api, type StudyPlan } from '@/lib/api-client';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export default function StudyPlanPage() {
   const [goal, setGoal] = useState('');
@@ -49,15 +50,15 @@ export default function StudyPlanPage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          <Loader2 className="h-4 w-4 shrink-0" />
+        <div className="flex items-center gap-2 rounded-xl bg-danger-light px-4 py-3 text-sm text-danger">
+          <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
         </div>
       )}
 
       <div className="grid lg:grid-cols-5 gap-6">
         <div className="lg:col-span-2">
-          <form onSubmit={handleGenerate} className="rounded-xl border border-border p-6 space-y-4">
+          <form onSubmit={handleGenerate} className="rounded-2xl border border-border p-6 space-y-4">
             <div>
               <label className="text-sm font-medium mb-1.5 block">Your Goal *</label>
               <textarea
@@ -126,13 +127,32 @@ export default function StudyPlanPage() {
         </div>
 
         <div className="lg:col-span-3">
-          {!plan ? (
-            <div className="rounded-xl border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
-              Fill in the form and generate your personalized study plan
+          {generating && (
+            <div className="rounded-2xl border border-border p-8 text-center space-y-3">
+              <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
+              <p className="text-sm font-medium">Building your study plan...</p>
+              <div className="flex justify-center gap-3">
+                {['Analyzing gaps', 'Planning', 'Curating'].map((step, i) => (
+                  <span key={step} className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <span className={`h-1.5 w-1.5 rounded-full ${i < 2 ? 'bg-emerald-500' : 'bg-stone-300'}`} />
+                    {step}
+                  </span>
+                ))}
+              </div>
             </div>
-          ) : (
+          )}
+
+          {!plan && !generating && (
+            <EmptyState
+              icon={<BookOpen className="h-7 w-7" />}
+              title="Create Your Study Plan"
+              description="Fill in the form to generate a personalized learning roadmap tailored to your goals."
+            />
+          )}
+
+          {plan && (
             <div className="space-y-4">
-              <div className="rounded-xl border border-border p-5 bg-stone-50">
+              <div className="rounded-2xl border border-border p-5 bg-stone-50">
                 <div className="flex items-start gap-3">
                   <Goal className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                   <div>
@@ -143,7 +163,7 @@ export default function StudyPlanPage() {
               </div>
 
               {plan.weeklyPlans.map((week) => (
-                <div key={week.week} className="rounded-xl border border-border overflow-hidden">
+                <div key={week.week} className="rounded-2xl border border-border overflow-hidden">
                   <div className="flex items-center justify-between bg-stone-50 px-5 py-3 border-b border-border">
                     <div className="flex items-center gap-3">
                       <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium">
