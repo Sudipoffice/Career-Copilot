@@ -13,7 +13,7 @@
     "clean": "rm -rf .turbo dist"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
+    "@google/genai": "^2.12.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {

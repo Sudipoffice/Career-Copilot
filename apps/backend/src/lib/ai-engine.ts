@@ -28,20 +28,17 @@ async function callAI(systemPrompt: string, userMessage: string): Promise<string
   const client = getAIClient();
   const modelName = getEnv().GEMINI_MODEL;
 
-  const model = client.getGenerativeModel({
+  const response = await client.models.generateContent({
     model: modelName,
-    generationConfig: {
+    contents: userMessage,
+    config: {
+      systemInstruction: systemPrompt,
       temperature: 0.3,
       responseMimeType: 'application/json',
     },
   });
 
-  const result = await model.generateContent({
-    systemInstruction: { role: 'user', parts: [{ text: systemPrompt }] },
-    contents: [{ role: 'user', parts: [{ text: userMessage }] }],
-  });
-
-  const text = result.response.text();
+  const text = response.text;
   if (!text) {
     throw new Error('AI returned empty response');
   }

@@ -1,12 +1,12 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 
-export type AIClient = GoogleGenerativeAI;
+export type AIClient = GoogleGenAI;
 
 let genAI: AIClient | null = null;
 
 export function createAIClient(apiKey: string): AIClient {
   if (genAI) return genAI;
-  genAI = new GoogleGenerativeAI(apiKey);
+  genAI = new GoogleGenAI({ apiKey });
   return genAI;
 }
 

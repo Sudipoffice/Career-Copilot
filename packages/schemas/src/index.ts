@@ -8,7 +8,7 @@ export const envSchema = z.object({
   MONGODB_URI: z.string().url(),
   MONGODB_DB_NAME: z.string().default('career-copilot'),
   GEMINI_API_KEY: z.string().optional(),
-  GEMINI_MODEL: z.string().default('gemini-2.0-flash'),
+  GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
   REDIS_HOST: z.string().optional(),
   REDIS_PORT: z.coerce.number().optional(),
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
