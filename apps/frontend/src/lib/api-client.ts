@@ -140,7 +140,10 @@ export const api = {
     },
     list: () => request<Resume[]>('/resume'),
     get: (id: string) => request<Resume>(`/resume/${id}`),
-    delete: (id: string) => fetch(`${BASE_URL}/resume/${id}`, { method: 'DELETE' }),
+    delete: async (id: string) => {
+      const res = await fetch(`${BASE_URL}/resume/${id}`, { method: 'DELETE' });
+      if (!res.ok) { const body = await res.json().catch(() => ({})); throw new APIError(res.status, body?.error?.code ?? 'DELETE_FAILED', body?.error?.message ?? 'Delete failed'); }
+    },
   },
 
   jd: {
@@ -148,7 +151,10 @@ export const api = {
       request<JobDescription>('/jd', { method: 'POST', body: JSON.stringify(data) }),
     list: () => request<JobDescription[]>('/jd'),
     get: (id: string) => request<JobDescription>(`/jd/${id}`),
-    delete: (id: string) => fetch(`${BASE_URL}/jd/${id}`, { method: 'DELETE' }),
+    delete: async (id: string) => {
+      const res = await fetch(`${BASE_URL}/jd/${id}`, { method: 'DELETE' });
+      if (!res.ok) { const body = await res.json().catch(() => ({})); throw new APIError(res.status, body?.error?.code ?? 'DELETE_FAILED', body?.error?.message ?? 'Delete failed'); }
+    },
   },
 
   analysis: {

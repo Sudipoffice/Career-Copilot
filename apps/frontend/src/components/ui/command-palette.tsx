@@ -97,7 +97,14 @@ export function CommandPalette() {
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh]"
         >
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)} />
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            role="button"
+            tabIndex={0}
+            aria-label="Close search"
+            onClick={() => setOpen(false)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setOpen(false); } }}
+          />
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: -10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}

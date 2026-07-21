@@ -40,9 +40,9 @@ export function ScoreCard({ label, value, max = 100, subtitle, why, trend, icon,
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0 ml-2">
-          {trend === 'up' && <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />}
-          {trend === 'down' && <TrendingDown className="h-3.5 w-3.5 text-rose-500" />}
-          {trend === 'flat' && <Minus className="h-3.5 w-3.5 text-muted-foreground" />}
+          {trend === 'up' && <TrendingUp aria-hidden="true" className="h-3.5 w-3.5 text-emerald-500" />}
+          {trend === 'down' && <TrendingDown aria-hidden="true" className="h-3.5 w-3.5 text-rose-500" />}
+          {trend === 'flat' && <Minus aria-hidden="true" className="h-3.5 w-3.5 text-muted-foreground" />}
           <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${colors.bg} ${colors.text}`}>
             {colors.badge}
           </span>
@@ -71,7 +71,7 @@ export function ScoreCard({ label, value, max = 100, subtitle, why, trend, icon,
 
       {why && (
         <div className="flex items-start gap-1.5 mt-3 text-xs text-muted-foreground">
-          <HelpCircle className="h-3 w-3 shrink-0 mt-0.5 text-muted-foreground/60" />
+          <HelpCircle aria-hidden="true" className="h-3 w-3 shrink-0 mt-0.5 text-muted-foreground/60" />
           <span>{why}</span>
         </div>
       )}

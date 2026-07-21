@@ -38,6 +38,12 @@ export const analysisRequestSchema = z.object({
 
 export type AnalysisRequestInput = z.infer<typeof analysisRequestSchema>;
 
+export const resumeScoreSchema = z.object({
+  resumeId: z.string().length(24),
+});
+
+export type ResumeScoreInput = z.infer<typeof resumeScoreSchema>;
+
 // ─── Question Generation ────────────────────────────────
 export const questionGenSchema = z.object({
   jdId: z.string().length(24),

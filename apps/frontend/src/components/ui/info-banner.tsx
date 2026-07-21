@@ -71,6 +71,7 @@ export function InfoBanner({ variant = 'info', title, description, dismissable =
         {dismissable && (
           <button
             onClick={() => { setHidden(true); onDismiss?.(); }}
+            aria-label="Dismiss"
             className="flex h-6 w-6 items-center justify-center rounded-lg hover:bg-black/5 transition-colors"
           >
             <X className="h-3.5 w-3.5" />

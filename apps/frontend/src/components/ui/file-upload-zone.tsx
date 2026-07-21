@@ -112,10 +112,14 @@ export function FileUploadZone({
       {label && <p className="text-sm font-medium">{label}</p>}
 
       <div
+        role="button"
+        tabIndex={uploading || selectedFile ? -1 : 0}
+        onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !selectedFile && !uploading) { e.preventDefault(); inputRef.current?.click(); } }}
         onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
         onDragLeave={() => setIsDragOver(false)}
         onDrop={handleDrop}
         onClick={() => !selectedFile && !uploading && inputRef.current?.click()}
+        aria-label={selectedFile ? `Selected: ${selectedFile.name}` : 'Upload your resume'}
         className={`
           relative cursor-pointer rounded-2xl border-2 border-dashed p-8 text-center transition-all
           ${isDragOver
