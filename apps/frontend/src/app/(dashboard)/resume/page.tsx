@@ -42,16 +42,8 @@ export default function ResumePage() {
       const created = await api.resume.uploadWithProgress(file, setUploadProgress);
       setResumes((prev) => [created, ...prev]);
       setSelected(created);
-      setScoring(created._id);
-      try {
-        const score = await api.analysis.resumeScore({ resumeId: created._id });
-        const updated = { ...created, parsedContent: score };
-        setSelected(updated);
-        setResumes((prev) => prev.map((r) => (r._id === created._id ? updated : r)));
-      } catch {
-        // AI quota issue — still show the resume
-      }
-      setScoring(null);
+      if (created.parsedContent) setScoring(null);
+      else setScoring(created._id);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
@@ -111,7 +103,7 @@ export default function ResumePage() {
               {resumes.map((r) => (
                 <button
                   key={r._id}
-                  onClick={() => { setSelected(r); setShowPreview(false); if (!r.parsedContent) { setScoring(r._id); api.analysis.resumeScore({ resumeId: r._id }).then((s) => { const updated = { ...r, parsedContent: s }; setSelected(updated); setResumes((prev) => prev.map((item) => item._id === r._id ? updated : item)); }).catch(() => setError('Analysis unavailable — try again later')).finally(() => setScoring(null)); }}}
+                  onClick={() => { setSelected(r); setShowPreview(false); if (!r.parsedContent) setScoring(r._id); else setScoring(null); }}
                   className={`w-full flex items-center gap-3 rounded-xl border p-4 text-left text-sm transition-colors ${
                     selected?._id === r._id
                       ? 'border-primary bg-primary/5'
