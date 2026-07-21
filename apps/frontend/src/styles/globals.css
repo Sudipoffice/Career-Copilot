@@ -2,30 +2,61 @@
 @import "tw-animate-css";
 
 @theme {
+  /* ─── Surfaces ──────────────────────────────────── */
   --color-background: #fafaf9;
   --color-foreground: #1c1917;
   --color-card: #ffffff;
   --color-card-foreground: #1c1917;
-  --color-primary: #ff8c42;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #f5f5f4;
-  --color-secondary-foreground: #1c1917;
   --color-muted: #f5f5f4;
   --color-muted-foreground: #78716c;
-  --color-accent: #f5f5f4;
-  --color-accent-foreground: #1c1917;
-  --color-destructive: #ef4444;
-  --color-destructive-foreground: #ffffff;
   --color-border: #e7e5e4;
   --color-input: #e7e5e4;
-  --color-ring: #ff8c42;
+
+  /* ─── Brand ──────────────────────────────────────── */
+  --color-primary: #f97316;
+  --color-primary-foreground: #ffffff;
+  --color-primary-light: #fff7ed;
+  --color-ring: #f97316;
+
+  /* ─── Accent / Secondary ─────────────────────────── */
+  --color-secondary: #f5f5f4;
+  --color-secondary-foreground: #1c1917;
+  --color-accent: #f5f5f4;
+  --color-accent-foreground: #1c1917;
+
+  /* ─── Semantic Status ────────────────────────────── */
+  --color-success: #22c55e;
+  --color-success-foreground: #ffffff;
+  --color-success-light: #f0fdf4;
+
+  --color-warning: #eab308;
+  --color-warning-foreground: #ffffff;
+  --color-warning-light: #fefce8;
+
+  --color-danger: #ef4444;
+  --color-danger-foreground: #ffffff;
+  --color-danger-light: #fef2f2;
+
+  --color-info: #3b82f6;
+  --color-info-foreground: #ffffff;
+  --color-info-light: #eff6ff;
+
+  /* ─── Radii ──────────────────────────────────────── */
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
   --radius-lg: 1rem;
   --radius-xl: 1.25rem;
   --radius-2xl: 1.5rem;
+  --radius-button: 9999px;
+
+  /* ─── Typography ─────────────────────────────────── */
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Playfair Display", ui-serif, Georgia, serif;
+
+  /* ─── Spacing (additive) ─────────────────────────── */
+  --spacing-card: 1.75rem;
+  --spacing-section: 7.5rem;
+  --spacing-section-gap: 2rem;
 }
 
 @layer base {
@@ -37,7 +68,7 @@
     color: var(--color-foreground);
   }
   ::selection {
-    background-color: #ff8c4240;
+    background-color: #f9731640;
     color: #1c1917;
   }
 }
