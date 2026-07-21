@@ -1,41 +1,40 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Play, CheckCircle2, Loader2, FileText, Target, Sparkles, BookOpen } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, useScroll, useTransform, useMotionValueEvent } from 'framer-motion';
 
 const demoSteps = [
-  { label: 'Resume Uploaded', icon: FileText, duration: 800, color: 'text-emerald-600' },
-  { label: 'Analyzing Resume...', icon: Loader2, duration: 1200, color: 'text-blue-600' },
-  { label: 'ATS Score: 91%', icon: Target, duration: 600, color: 'text-emerald-600' },
-  { label: 'Skill Match: 84%', icon: CheckCircle2, duration: 600, color: 'text-emerald-600' },
-  { label: 'Questions Ready: 12', icon: Sparkles, duration: 600, color: 'text-violet-600' },
-  { label: 'Study Plan Built', icon: BookOpen, duration: 600, color: 'text-amber-600' },
+  { label: 'Resume Uploaded', icon: FileText, description: 'PDF parsed and extracted' },
+  { label: 'Analyzing Resume...', icon: Loader2, description: 'Scanning for ATS keywords' },
+  { label: 'ATS Score: 91%', icon: Target, description: 'Above industry average' },
+  { label: 'Skill Match: 84%', icon: CheckCircle2, description: 'Strong alignment detected' },
+  { label: 'Questions Ready: 12', icon: Sparkles, description: '3 behavioral, 9 technical' },
+  { label: 'Study Plan Built', icon: BookOpen, description: '7-day roadmap generated' },
 ];
 
 const missingSkills = ['Docker', 'GraphQL', 'CI/CD'];
 
 function DemoFlow() {
+  const sectionRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState(0);
-  const [showMissing, setShowMissing] = useState(false);
 
-  useEffect(() => {
-    if (step >= demoSteps.length) return;
-    const timer = setTimeout(() => setStep((s) => s + 1), demoSteps[step]!.duration);
-    return () => clearTimeout(timer);
-  }, [step]);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ['start start', 'end end'],
+  });
 
-  useEffect(() => {
-    if (step >= 3) {
-      const t = setTimeout(() => setShowMissing(true), 400);
-      return () => clearTimeout(t);
-    }
-    setShowMissing(false);
-  }, [step]);
+  const rawStep = useTransform(
+    scrollYProgress,
+    [0, 0.15, 0.3, 0.5, 0.65, 0.8, 1],
+    [0, 1, 2, 3, 4, 5, 6],
+  );
+
+  useMotionValueEvent(rawStep, 'change', (v) => setStep(Math.floor(v)));
 
   return (
-    <div className="relative aspect-[4/3]">
+    <div ref={sectionRef} className="relative aspect-[4/3]">
       <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-stone-50 rounded-3xl border border-border shadow-xl">
         <div className="p-6 space-y-4">
           <div className="flex items-center gap-2 pb-4 border-b border-border">
@@ -57,49 +56,44 @@ function DemoFlow() {
                 }`}
               >
                 {s.icon === Loader2 && i === step ? (
-                  <Loader2 className={`h-4 w-4 animate-spin ${s.color}`} />
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                 ) : (
-                  <CheckCircle2 className={`h-4 w-4 ${s.color}`} />
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                 )}
-                <span className={`text-sm font-medium ${s.color}`}>{s.label}</span>
+                <span className={`text-sm font-medium ${i === step && s.icon === Loader2 ? 'text-blue-700' : 'text-emerald-700'}`}>{s.label}</span>
                 {i === 1 && step === 1 && (
                   <div className="flex-1 h-1.5 rounded-full bg-stone-200 overflow-hidden ml-2">
                     <motion.div
                       className="h-full rounded-full bg-blue-500"
                       initial={{ width: '0%' }}
                       animate={{ width: '100%' }}
-                      transition={{ duration: 1.2, ease: 'easeInOut' }}
+                      transition={{ duration: 2, ease: 'easeInOut' }}
                     />
                   </div>
                 )}
               </motion.div>
             ))}
 
-            <AnimatePresence>
-              {showMissing && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="rounded-xl border border-rose-200 bg-rose-50 p-3"
-                >
+            {step >= 3 && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <div className="rounded-xl border border-rose-200 bg-rose-50 p-3">
                   <div className="text-xs font-medium text-rose-700 mb-2">Missing Skills</div>
                   <div className="flex flex-wrap gap-2">
                     {missingSkills.map((skill) => (
-                      <motion.span
+                      <span
                         key={skill}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.2 }}
                         className="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-medium text-rose-700 border border-rose-200 shadow-sm"
                       >
                         {skill}
-                      </motion.span>
+                      </span>
                     ))}
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                </div>
+              </motion.div>
+            )}
           </div>
 
           <motion.div
@@ -117,10 +111,14 @@ function DemoFlow() {
           </motion.div>
 
           {step < 2 && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center pt-2">
+            <motion.div
+              initial={{ opacity: 1 }}
+              animate={{ opacity: step < 2 ? 1 : 0 }}
+              className="flex items-center gap-2 text-xs text-muted-foreground justify-center pt-2"
+            >
               <span className="flex h-1.5 w-1.5 rounded-full bg-stone-300 animate-pulse" />
-              Analyzing your career profile...
-            </div>
+              Scroll to see analysis progress...
+            </motion.div>
           )}
         </div>
       </div>
@@ -146,7 +144,7 @@ export function Hero() {
               AI-Powered Career Preparation
             </div>
 
-            <h1 className="font-serif text-5xl sm:text-6xl lg:text-7xl leading-[1.1] tracking-tight text-foreground">
+            <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.1] tracking-tight text-foreground">
               Land Your Dream Job with{' '}
               <span className="bg-gradient-to-r from-primary to-orange-600 bg-clip-text text-transparent">
                 AI-Powered
