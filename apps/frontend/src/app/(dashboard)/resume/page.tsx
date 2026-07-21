@@ -1,18 +1,21 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { Upload, FileText, Trash2, Loader2, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { FileText, Trash2, Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { api, type Resume } from '@/lib/api-client';
 import { ScoreCard } from '@/components/ui/score-card';
 import { EmptyState } from '@/components/ui/empty-state';
+import { FileUploadZone } from '@/components/ui/file-upload-zone';
 
 export default function ResumePage() {
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [scoring, setScoring] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [selected, setSelected] = useState<Resume | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
     try {
@@ -28,13 +31,12 @@ export default function ResumePage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFile = async (file: File) => {
     setUploading(true);
+    setUploadProgress(0);
     setError('');
     try {
-      const created = await api.resume.upload(file);
+      const created = await api.resume.uploadWithProgress(file, setUploadProgress);
       setResumes((prev) => [created, ...prev]);
       setSelected(created);
       setScoring(created._id);
@@ -67,41 +69,30 @@ export default function ResumePage() {
           <h2 className="text-3xl font-bold tracking-tight">Resume Analysis</h2>
           <p className="text-muted-foreground mt-1">Upload your resume for ATS analysis and scoring</p>
         </div>
-        <label className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 active:scale-[0.98] transition-all">
-          <Upload className="h-4 w-4" />
-          {uploading ? 'Uploading...' : 'Upload Resume'}
-          <input type="file" accept=".pdf,.docx" className="hidden" onChange={handleUpload} disabled={uploading} />
-        </label>
       </div>
 
-      {error && (
-        <div className="flex items-center gap-2 rounded-xl bg-danger-light px-4 py-3 text-sm text-danger">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {error}
-        </div>
-      )}
-
       <div className="grid lg:grid-cols-5 gap-6">
-        <div className="lg:col-span-2 space-y-3">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Uploaded Resumes</h3>
-          {loading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => <div key={i} className="h-16 rounded-xl bg-stone-100 animate-pulse" />)}
-            </div>
-          ) : resumes.length === 0 ? (
-            <EmptyState
-              icon={<FileText className="h-7 w-7" />}
-              title="No Resume Yet"
-              description="Upload a PDF or DOCX resume to get started."
-              action={
-                <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 transition-all">
-                  <Upload className="h-4 w-4" />
-                  Upload Resume
-                  <input type="file" accept=".pdf,.docx" className="hidden" onChange={handleUpload} disabled={uploading} />
-                </label>
-              }
-            />
-          ) : (
+        <div className="lg:col-span-2 space-y-4">
+          <FileUploadZone
+            uploading={uploading}
+            uploadProgress={uploadProgress}
+            error={error}
+            onFile={handleFile}
+          />
+
+          <div ref={listRef}>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Uploaded Resumes</h3>
+            {loading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => <div key={i} className="h-16 rounded-xl bg-stone-100 animate-pulse" />)}
+              </div>
+            ) : resumes.length === 0 ? (
+              <EmptyState
+                icon={<FileText className="h-7 w-7" />}
+                title="No Resume Yet"
+                description="Drag &amp; drop or use the upload zone above."
+              />
+            ) : (
             <div className="space-y-2">
               {resumes.map((r) => (
                 <button
@@ -130,6 +121,7 @@ export default function ResumePage() {
               ))}
             </div>
           )}
+        </div>
         </div>
 
         <div className="lg:col-span-3">

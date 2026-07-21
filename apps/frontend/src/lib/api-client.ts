@@ -116,6 +116,26 @@ export const api = {
       if (!res.ok) throw new APIError(res.status, body?.error?.code ?? 'UPLOAD_FAILED', body?.error?.message ?? 'Upload failed');
       return body.data as Resume;
     },
+    uploadWithProgress(file: File, onProgress?: (pct: number) => void): Promise<Resume> {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) onProgress?.(Math.round((e.loaded / e.total) * 100));
+        };
+        xhr.onload = () => {
+          try {
+            const body = JSON.parse(xhr.responseText);
+            if (xhr.status >= 200 && xhr.status < 300) resolve(body.data as Resume);
+            else reject(new APIError(xhr.status, body?.error?.code ?? 'UPLOAD_FAILED', body?.error?.message ?? 'Upload failed'));
+          } catch { reject(new Error('Invalid server response')); }
+        };
+        xhr.onerror = () => reject(new Error('Network error'));
+        const form = new FormData();
+        form.append('file', file);
+        xhr.open('POST', `${BASE_URL}/resume/upload`);
+        xhr.send(form);
+      });
+    },
     list: () => request<Resume[]>('/resume'),
     get: (id: string) => request<Resume>(`/resume/${id}`),
     delete: (id: string) => fetch(`${BASE_URL}/resume/${id}`, { method: 'DELETE' }),
