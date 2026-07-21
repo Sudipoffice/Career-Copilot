@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { FileText, Trash2, Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { FileText, Trash2, Loader2, CheckCircle2, XCircle, AlertCircle, Eye } from 'lucide-react';
 import { api, type Resume } from '@/lib/api-client';
 import { ScoreCard } from '@/components/ui/score-card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { FileUploadZone } from '@/components/ui/file-upload-zone';
+import { InfoBanner } from '@/components/ui/info-banner';
 
 export default function ResumePage() {
   const [resumes, setResumes] = useState<Resume[]>([]);
@@ -15,6 +16,8 @@ export default function ResumePage() {
   const [scoring, setScoring] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [selected, setSelected] = useState<Resume | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [showQuotaBanner, setShowQuotaBanner] = useState(true);
   const listRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
@@ -62,6 +65,8 @@ export default function ResumePage() {
     if (selected?._id === id) setSelected(null);
   };
 
+  const isPdf = selected?.mimeType === 'application/pdf';
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -70,6 +75,15 @@ export default function ResumePage() {
           <p className="text-muted-foreground mt-1">Upload your resume for ATS analysis and scoring</p>
         </div>
       </div>
+
+      {showQuotaBanner && (
+        <InfoBanner
+          variant="warning"
+          title="AI analysis is temporarily unavailable"
+          description="The Gemini API quota has been exceeded. Your data is saved and ready for analysis when service resumes. All other features still work."
+          onDismiss={() => setShowQuotaBanner(false)}
+        />
+      )}
 
       <div className="grid lg:grid-cols-5 gap-6">
         <div className="lg:col-span-2 space-y-4">
@@ -97,7 +111,7 @@ export default function ResumePage() {
               {resumes.map((r) => (
                 <button
                   key={r._id}
-                  onClick={() => { setSelected(r); if (!r.parsedContent) { setScoring(r._id); api.analysis.resumeScore({ resumeId: r._id }).then((s) => { r.parsedContent = s; setSelected({ ...r }); }).catch(() => {}).finally(() => setScoring(null)); }}}
+                  onClick={() => { setSelected(r); setShowPreview(false); if (!r.parsedContent) { setScoring(r._id); api.analysis.resumeScore({ resumeId: r._id }).then((s) => { r.parsedContent = s; setSelected({ ...r }); }).catch(() => {}).finally(() => setScoring(null)); }}}
                   className={`w-full flex items-center gap-3 rounded-xl border p-4 text-left text-sm transition-colors ${
                     selected?._id === r._id
                       ? 'border-primary bg-primary/5'
@@ -146,9 +160,35 @@ export default function ResumePage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {selected.parsedContent ? (
+              <div className="flex items-center gap-2 border-b border-border pb-3">
+                <button
+                  onClick={() => setShowPreview(false)}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${!showPreview ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  Analysis
+                </button>
+                {isPdf && (
+                  <button
+                    onClick={() => setShowPreview(true)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${showPreview ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    Preview
+                  </button>
+                )}
+              </div>
+
+              {showPreview && isPdf ? (
+                <div className="rounded-2xl border border-border overflow-hidden">
+                  <iframe
+                    src={api.resume.fileUrl(selected._id)}
+                    className="w-full h-[70vh]"
+                    title={selected.fileName}
+                  />
+                </div>
+              ) : selected.parsedContent ? (
                 <>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid sm:grid-cols-2 gap-4">
                     <ScoreCard
                       label="ATS Score"
                       value={selected.parsedContent.overallScore}

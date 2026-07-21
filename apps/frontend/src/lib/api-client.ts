@@ -108,6 +108,8 @@ export interface StudyPlan {
 
 export const api = {
   resume: {
+    fileUrl: (id: string) => `${BASE_URL}/resume/${id}/file`,
+
     async upload(file: File) {
       const form = new FormData();
       form.append('file', file);

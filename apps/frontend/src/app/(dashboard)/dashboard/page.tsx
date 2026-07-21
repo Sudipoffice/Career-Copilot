@@ -2,15 +2,17 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { FileText, Building2, Target, HelpCircle, BookOpen, ArrowRight, Upload } from 'lucide-react';
+import { FileText, Building2, Target, HelpCircle, BookOpen, ArrowRight, Upload, Clock } from 'lucide-react';
 import { api, type Resume, type SkillGapResult } from '@/lib/api-client';
 import { CareerReadinessScore } from '@/components/dashboard/career-readiness-score';
+import { InfoBanner } from '@/components/ui/info-banner';
 
 export default function DashboardPage() {
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [jdCount, setJdCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [latestSkillGap, setLatestSkillGap] = useState<SkillGapResult | null>(null);
+  const [showQuotaBanner, setShowQuotaBanner] = useState(true);
 
   const load = useCallback(async () => {
     try {
@@ -23,7 +25,7 @@ export default function DashboardPage() {
           const gap = await api.analysis.skillGap({ resumeId: res[0]!._id, jdId: jds[0]!._id });
           setLatestSkillGap(gap);
         } catch {
-          // silent
+          // silent — quota exhausted
         }
       }
     } catch {
@@ -55,6 +57,15 @@ export default function DashboardPage() {
             : 'Upload a resume or paste a job description to get started.'}
         </p>
       </div>
+
+      {showQuotaBanner && totalItems > 0 && (
+        <InfoBanner
+          variant="warning"
+          title="AI analysis is temporarily unavailable"
+          description="The Gemini API quota has been exceeded. Your data is saved and analysis will resume when the service is available."
+          onDismiss={() => setShowQuotaBanner(false)}
+        />
+      )}
 
       {loading ? (
         <div className="space-y-4">
@@ -136,6 +147,33 @@ export default function DashboardPage() {
               </Link>
             ))}
           </div>
+
+          {totalItems > 0 && (
+            <div className="rounded-2xl border border-border p-5 space-y-4">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                Quick Overview
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="rounded-xl bg-stone-50 p-4 text-center">
+                  <p className="text-2xl font-bold">{resumes.length}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Resumes</p>
+                </div>
+                <div className="rounded-xl bg-stone-50 p-4 text-center">
+                  <p className="text-2xl font-bold">{jdCount}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Job Descriptions</p>
+                </div>
+                <div className="rounded-xl bg-stone-50 p-4 text-center">
+                  <p className="text-2xl font-bold">{latestSkillGap ? latestSkillGap.matchPercentage + '%' : '—'}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Best Match</p>
+                </div>
+                <div className="rounded-xl bg-stone-50 p-4 text-center">
+                  <p className="text-2xl font-bold">{resumes.filter((r) => r.parsedContent).length}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Analyzed</p>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

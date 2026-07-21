@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, Target, CheckCircle2, XCircle, Lightbulb, FileText, ArrowRight, AlertCircle } from 'lucide-react';
+import { Loader2, Target, CheckCircle2, XCircle, Lightbulb, FileText, ArrowRight, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { api, type Resume, type JobDescription, type SkillGapResult } from '@/lib/api-client';
 import { ScoreCard } from '@/components/ui/score-card';
 import { EmptyState } from '@/components/ui/empty-state';
+import { InfoBanner } from '@/components/ui/info-banner';
 
 export default function AnalysisPage() {
   const [resumes, setResumes] = useState<Resume[]>([]);
@@ -16,12 +17,15 @@ export default function AnalysisPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<SkillGapResult | null>(null);
   const [error, setError] = useState('');
+  const [showQuotaBanner, setShowQuotaBanner] = useState(true);
 
   const load = useCallback(async () => {
     try {
       const [r, j] = await Promise.all([api.resume.list(), api.jd.list()]);
       setResumes(r);
       setJds(j);
+      if (r.length === 1) setSelectedResume(r[0]!._id);
+      if (j.length === 1) setSelectedJd(j[0]!._id);
     } catch {
       setError('Failed to load data');
     } finally {
@@ -73,10 +77,16 @@ export default function AnalysisPage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-xl bg-danger-light px-4 py-3 text-sm text-danger">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {error}
-        </div>
+        <InfoBanner variant="error" title="Analysis failed" description={error} dismissable={false} />
+      )}
+
+      {showQuotaBanner && error && !analyzing && (
+        <InfoBanner
+          variant="warning"
+          title="AI analysis is temporarily unavailable"
+          description="The Gemini API quota has been exceeded. Your data is saved and ready when service resumes."
+          onDismiss={() => setShowQuotaBanner(false)}
+        />
       )}
 
       {resumes.length === 0 || jds.length === 0 ? (
@@ -100,7 +110,7 @@ export default function AnalysisPage() {
         </div>
       ) : (
         <>
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid sm:grid-cols-[1fr,1fr,auto] gap-4 items-end">
             <div>
               <label className="text-sm font-medium mb-1.5 block">Your Resume</label>
               <select
@@ -127,16 +137,13 @@ export default function AnalysisPage() {
                 ))}
               </select>
             </div>
-          </div>
-
-          <div className="flex justify-center">
             <button
               onClick={handleAnalyze}
               disabled={!selectedResume || !selectedJd || analyzing}
-              className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-8 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
+              className="inline-flex h-[42px] items-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
             >
-              {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Target className="h-4 w-4" />}
-              {analyzing ? 'Analyzing...' : 'Run Analysis'}
+              {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+              {analyzing ? 'Analyzing...' : 'Analyze'}
             </button>
           </div>
 

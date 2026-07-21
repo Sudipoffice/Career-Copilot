@@ -31,6 +31,17 @@ export const resumeController = {
     }
   },
 
+  async getFile(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { data, mimeType, fileName } = await resumeService.getFile(req.params.id as string);
+      res.setHeader('Content-Type', mimeType);
+      res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
+      res.send(data);
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
       await resumeService.delete(req.params.id as string);
