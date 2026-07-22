@@ -3,30 +3,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { FileText, Building2, Target, HelpCircle, BookOpen, ArrowRight, Upload, Clock } from 'lucide-react';
-import { api, type Resume, type SkillGapResult } from '@/lib/api-client';
+import { api, type Resume } from '@/lib/api-client';
 import { CareerReadinessScore } from '@/components/dashboard/career-readiness-score';
 
 export default function DashboardPage() {
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [jdCount, setJdCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [latestSkillGap, setLatestSkillGap] = useState<SkillGapResult | null>(null);
-
 
   const load = useCallback(async () => {
     try {
       const [res, jds] = await Promise.all([api.resume.list(), api.jd.list()]);
       setResumes(res);
       setJdCount(jds.length);
-
-      if (res.length > 0 && jds.length > 0) {
-        try {
-          const gap = await api.analysis.skillGap({ resumeId: res[0]!._id, jdId: jds[0]!._id });
-          setLatestSkillGap(gap);
-        } catch {
-          // silent — quota exhausted
-        }
-      }
     } catch {
       // silent
     } finally {
@@ -98,7 +87,7 @@ export default function DashboardPage() {
         <>
           <div className="grid lg:grid-cols-5 gap-6">
             <div className="lg:col-span-2">
-              <CareerReadinessScore resumes={resumes} latestSkillGap={latestSkillGap} />
+              <CareerReadinessScore resumes={resumes} />
             </div>
             <div className="lg:col-span-3 grid sm:grid-cols-2 gap-4">
               {cards.slice(0, 4).map((card) => (
@@ -154,7 +143,7 @@ export default function DashboardPage() {
                   <p className="text-xs text-muted-foreground mt-0.5">Job Descriptions</p>
                 </div>
                 <div className="rounded-xl bg-stone-50 p-4 text-center">
-                  <p className="text-2xl font-bold">{latestSkillGap ? latestSkillGap.matchPercentage + '%' : '—'}</p>
+                  <p className="text-2xl font-bold">—</p>
                   <p className="text-xs text-muted-foreground mt-0.5">Best Match</p>
                 </div>
                 <div className="rounded-xl bg-stone-50 p-4 text-center">

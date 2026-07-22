@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Plus, Trash2, Loader2, Building2, ArrowUpRight, FileText } from 'lucide-react';
 import { api, type JobDescription } from '@/lib/api-client';
 import { EmptyState } from '@/components/ui/empty-state';
+import { NextSteps } from '@/components/ui/next-steps';
 
 export default function JobDescriptionPage() {
   const [jds, setJds] = useState<JobDescription[]>([]);
@@ -125,8 +126,8 @@ export default function JobDescriptionPage() {
         </form>
       )}
 
-      <div className="grid lg:grid-cols-5 gap-6">
-        <div className="lg:col-span-2 space-y-3">
+      <div className={`grid lg:grid-cols-5 gap-6 ${!selected ? '' : ''}`}>
+        <div className={`space-y-3 ${!selected ? 'lg:col-span-5' : 'lg:col-span-2'}`}>
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">All JDs</h3>
           {loading ? (
             <div className="space-y-3">
@@ -169,14 +170,8 @@ export default function JobDescriptionPage() {
           )}
         </div>
 
-        <div className="lg:col-span-3">
-          {!selected ? (
-            <EmptyState
-              icon={<Building2 className="h-7 w-7" />}
-              title="Select a JD"
-              description="Choose a job description from the list to view its analysis."
-            />
-          ) : (
+        {selected && (
+          <div className="lg:col-span-3">
             <div className="rounded-xl border border-border p-6 space-y-6">
               <div>
                 <h3 className="font-semibold text-lg">{selected.title}</h3>
@@ -249,9 +244,17 @@ export default function JobDescriptionPage() {
                   {selected.rawText}
                 </pre>
               </details>
+
+              {selected.structuredData && (
+                <div className="pt-2">
+                  <NextSteps steps={[
+                    { label: 'Run Skill Gap Analysis', href: '/analysis' },
+                  ]} />
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

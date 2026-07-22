@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2, BookOpen, Clock, CheckCircle2, Goal, ArrowRight, AlertCircle } from 'lucide-react';
+import { BookOpen, Goal, Clock, CheckCircle2, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { api, type StudyPlan } from '@/lib/api-client';
-import { EmptyState } from '@/components/ui/empty-state';
 
 export default function StudyPlanPage() {
   const [goal, setGoal] = useState('');
@@ -56,8 +55,8 @@ export default function StudyPlanPage() {
         </div>
       )}
 
-      <div className="grid lg:grid-cols-5 gap-6">
-        <div className="lg:col-span-2">
+      <div className={`grid lg:grid-cols-5 gap-6 ${!plan ? '' : ''}`}>
+        <div className={`${!plan ? 'lg:col-span-5' : 'lg:col-span-2'}`}>
           <form onSubmit={handleGenerate} className="rounded-2xl border border-border p-6 space-y-4">
             <div>
               <label className="text-sm font-medium mb-1.5 block">Your Goal *</label>
@@ -115,19 +114,21 @@ export default function StudyPlanPage() {
               )}
             </div>
 
-            <button
-              type="submit"
-              disabled={generating || !goal || focusAreas.length === 0}
-              className="w-full inline-flex h-11 items-center justify-center gap-2 rounded-full bg-primary px-8 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
-            >
-              {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <BookOpen className="h-4 w-4" />}
-              {generating ? 'Generating...' : 'Generate Study Plan'}
-            </button>
+            <div className="flex justify-center">
+              <button
+                type="submit"
+                disabled={generating || !goal || focusAreas.length === 0}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-primary px-8 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
+              >
+                {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <BookOpen className="h-4 w-4" />}
+                {generating ? 'Generating...' : 'Generate Study Plan'}
+              </button>
+            </div>
           </form>
         </div>
 
-        <div className="lg:col-span-3">
-          {generating && (
+        {generating && (
+          <div className="lg:col-span-3">
             <div className="rounded-2xl border border-border p-8 text-center space-y-3">
               <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
               <p className="text-sm font-medium">Building your study plan...</p>
@@ -140,17 +141,11 @@ export default function StudyPlanPage() {
                 ))}
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {!plan && !generating && (
-            <EmptyState
-              icon={<BookOpen className="h-7 w-7" />}
-              title="Create Your Study Plan"
-              description="Fill in the form to generate a personalized learning roadmap tailored to your goals."
-            />
-          )}
-
-          {plan && (
+        {plan && (
+          <div className="lg:col-span-3">
             <div className="space-y-4">
               <div className="rounded-2xl border border-border p-5 bg-stone-50">
                 <div className="flex items-start gap-3">
@@ -229,8 +224,8 @@ export default function StudyPlanPage() {
                 </div>
               ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

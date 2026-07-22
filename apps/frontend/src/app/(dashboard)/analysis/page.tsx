@@ -7,6 +7,7 @@ import { api, type Resume, type JobDescription, type SkillGapResult } from '@/li
 import { ScoreCard } from '@/components/ui/score-card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { InfoBanner } from '@/components/ui/info-banner';
+import { NextSteps } from '@/components/ui/next-steps';
 
 export default function AnalysisPage() {
   const [resumes, setResumes] = useState<Resume[]>([]);
@@ -128,14 +129,16 @@ export default function AnalysisPage() {
                 ))}
               </select>
             </div>
-            <button
-              onClick={handleAnalyze}
-              disabled={!selectedResume || !selectedJd || analyzing}
-              className="inline-flex h-[42px] items-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
-            >
-              {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
-              {analyzing ? 'Analyzing...' : 'Analyze'}
-            </button>
+            <div className="flex sm:block justify-center">
+              <button
+                onClick={handleAnalyze}
+                disabled={!selectedResume || !selectedJd || analyzing}
+                className="w-full sm:w-auto inline-flex h-[42px] items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
+              >
+                {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+                {analyzing ? 'Analyzing...' : 'Analyze'}
+              </button>
+            </div>
           </div>
 
           {analyzing && (
@@ -246,6 +249,11 @@ export default function AnalysisPage() {
                   </div>
                 </div>
               )}
+
+              <NextSteps steps={[
+                { label: 'Generate Interview Questions', href: '/questions' },
+                { label: 'Create a Study Plan', href: '/study-plan' },
+              ]} />
             </div>
           )}
 

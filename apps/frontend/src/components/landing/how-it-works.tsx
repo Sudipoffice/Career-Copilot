@@ -48,7 +48,7 @@ export function HowItWorks() {
           </h2>
         </motion.div>
 
-        <div className="grid md:grid-cow-2 lg:grid-cols-4 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
           {steps.map((step, i) => (
             <motion.div
               key={step.title}
@@ -58,17 +58,17 @@ export function HowItWorks() {
               transition={{ delay: i * 0.15 }}
               className="group relative"
             >
-              <div className="rounded-2xl bg-white border border-border p-8 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300">
-                <div className={`inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${step.color} text-white shadow-sm mb-5`}>
+              <div className="flex flex-col rounded-2xl bg-white border border-border p-8 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 h-full">
+                <div className={`inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${step.color} text-white shadow-sm mb-5 shrink-0`}>
                   <step.icon className="h-5 w-5" />
                 </div>
-                <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center gap-2 mb-3 shrink-0">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-stone-100 text-xs font-semibold text-stone-500">
                     {i + 1}
                   </span>
                   <h3 className="font-semibold text-lg">{step.title}</h3>
                 </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed flex-1">{step.description}</p>
               </div>
               {i < steps.length - 1 && (
                 <div className="hidden lg:block absolute top-1/2 -right-3 w-6 h-px bg-border" />

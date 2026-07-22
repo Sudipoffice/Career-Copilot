@@ -14,7 +14,14 @@ export function createApp() {
   const env = getEnv();
 
   // Security
-  app.use(helmet());
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        'frame-ancestors': [env.CORS_ORIGIN],
+      },
+    },
+  }));
   app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
 
   // Compression

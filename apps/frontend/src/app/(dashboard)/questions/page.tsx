@@ -5,6 +5,7 @@ import { Loader2, HelpCircle, Sparkles, AlertCircle, FileText } from 'lucide-rea
 import Link from 'next/link';
 import { api, type JobDescription, type Question } from '@/lib/api-client';
 import { EmptyState } from '@/components/ui/empty-state';
+import { NextSteps } from '@/components/ui/next-steps';
 
 export default function QuestionsPage() {
   const [jds, setJds] = useState<JobDescription[]>([]);
@@ -220,6 +221,10 @@ export default function QuestionsPage() {
                   </div>
                 ))}
               </div>
+
+              <NextSteps steps={[
+                { label: 'Create a Study Plan', href: '/study-plan' },
+              ]} />
             </>
           )}
 
