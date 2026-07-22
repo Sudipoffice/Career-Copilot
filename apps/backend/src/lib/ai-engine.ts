@@ -16,9 +16,9 @@ import {
 } from '@career-copilot/ai';
 
 function ensureClient() {
-  const apiKey = getEnv().GEMINI_API_KEY;
+  const apiKey = getEnv().OPENROUTER_API_KEY;
   if (!apiKey) {
-    throw new Error('GEMINI_API_KEY is not set');
+    throw new Error('OPENROUTER_API_KEY is not set');
   }
   createAIClient(apiKey);
 }
@@ -26,19 +26,19 @@ function ensureClient() {
 async function callAI(systemPrompt: string, userMessage: string): Promise<string> {
   ensureClient();
   const client = getAIClient();
-  const modelName = getEnv().GEMINI_MODEL;
+  const modelName = getEnv().AI_MODEL;
 
-  const response = await client.models.generateContent({
+  const response = await client.chat.completions.create({
     model: modelName,
-    contents: userMessage,
-    config: {
-      systemInstruction: systemPrompt,
-      temperature: 0.3,
-      responseMimeType: 'application/json',
-    },
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMessage },
+    ],
+    temperature: 0.3,
+    response_format: { type: 'json_object' },
   });
 
-  const text = response.text;
+  const text = response.choices[0]?.message?.content;
   if (!text) {
     throw new Error('AI returned empty response');
   }

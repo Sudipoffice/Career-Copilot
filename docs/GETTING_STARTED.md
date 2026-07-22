@@ -5,7 +5,7 @@
 - **Node.js** >= 20.0.0
 - **pnpm** >= 9.0.0 (`npm install -g pnpm`)
 - **MongoDB** >= 7 (local or Atlas)
-- **Google Gemini API key** ([get one free at aistudio.google.com](https://aistudio.google.com))
+- **OpenRouter API key** ([get one free at openrouter.ai/keys](https://openrouter.ai/keys))
 - **Git**
 
 ## Installation
@@ -27,10 +27,10 @@ cp .env.example .env
 
 Edit `.env` with your values:
 
-| Variable         | Description               | Required         |
-| ---------------- | ------------------------- | ---------------- |
-| `MONGODB_URI`    | MongoDB connection string | Yes              |
-| `GEMINI_API_KEY` | Google Gemini API key     | No (placeholder) |
+| Variable            | Description               | Required         |
+| ------------------- | ------------------------- | ---------------- |
+| `MONGODB_URI`       | MongoDB connection string | Yes              |
+| `OPENROUTER_API_KEY`| OpenRouter API key        | No (placeholder) |
 
 ## Development
 

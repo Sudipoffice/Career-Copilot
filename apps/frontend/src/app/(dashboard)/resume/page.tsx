@@ -6,7 +6,6 @@ import { api, type Resume } from '@/lib/api-client';
 import { ScoreCard } from '@/components/ui/score-card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { FileUploadZone } from '@/components/ui/file-upload-zone';
-import { InfoBanner } from '@/components/ui/info-banner';
 
 export default function ResumePage() {
   const [resumes, setResumes] = useState<Resume[]>([]);
@@ -17,7 +16,7 @@ export default function ResumePage() {
   const [error, setError] = useState('');
   const [selected, setSelected] = useState<Resume | null>(null);
   const [showPreview, setShowPreview] = useState(false);
-  const [showQuotaBanner, setShowQuotaBanner] = useState(true);
+
   const listRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
@@ -67,15 +66,6 @@ export default function ResumePage() {
           <p className="text-muted-foreground mt-1">Upload your resume for ATS analysis and scoring</p>
         </div>
       </div>
-
-      {showQuotaBanner && (
-        <InfoBanner
-          variant="warning"
-          title="AI analysis is temporarily unavailable"
-          description="The Gemini API quota has been exceeded. Your data is saved and ready for analysis when service resumes. All other features still work."
-          onDismiss={() => setShowQuotaBanner(false)}
-        />
-      )}
 
       <div className="grid lg:grid-cols-5 gap-6">
         <div className="lg:col-span-2 space-y-4">

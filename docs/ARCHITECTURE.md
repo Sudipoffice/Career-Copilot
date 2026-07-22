@@ -136,13 +136,13 @@ Since the MVP has no auth, `userId` is optional on both models. When auth is add
 
 **File:** `apps/backend/src/lib/ai-engine.ts`
 
-**Model:** Google Gemini (`gemini-2.5-flash` default, `gemini-2.5-pro` for higher quality)
+**Model:** DeepSeek Chat v3.1 via OpenRouter (`deepseek/deepseek-chat-v3.1:free`)
 
 The AI engine is the bridge between the feature services and the LLM. It:
 
-1. Initializes the Gemini client lazily with `GEMINI_API_KEY` from env
+1. Initializes the OpenRouter client (OpenAI SDK) lazily with `OPENROUTER_API_KEY` from env
 2. Selects the system prompt based on the operation
-3. Sends the user's input with `temperature: 0.3` and `responseMimeType: 'application/json'` (forces valid JSON output)
+3. Sends the user's input with `temperature: 0.3` and `response_format: { type: 'json_object' }` (forces valid JSON output)
 4. Parses the raw LLM response, validates it against a Zod schema, and returns a typed object
 
 ```
@@ -150,9 +150,9 @@ Feature Service → aiEngine.analyzeResume(text)
                     ↓
                   callAI(systemPrompt, userMessage)
                     ↓
-                  createAIClient(apiKey)  →  Google Generative AI SDK
+                    createAIClient(apiKey)  →  OpenAI SDK → OpenRouter
                     ↓
-                  model.generateContent({ systemInstruction, contents, generationConfig })
+                  client.chat.completions.create({ model, messages, temperature, response_format })
                     ↓
                   parseAIResponse(text, resumeAnalysisSchema)
                     ↓
@@ -171,8 +171,8 @@ Available operations:
 
 **Interview takeaway:**
 
-- `responseMimeType: 'application/json'` forces Gemini to return valid JSON — no markdown fences to strip.
-- `systemInstruction` is Gemini's equivalent of OpenAI's `system` message role.
+- `response_format: { type: 'json_object' }` asks the model to return valid JSON — no markdown fences to strip.
+- System prompt via `messages[0].role = 'system'` is the standard chat role format.
 - Low temperature (0.3) for deterministic structured output.
 - Structured outputs via Zod — the AI can return anything, so we validate before the app touches it.
 
@@ -203,7 +203,7 @@ POST /api/v1/resume/upload (multipart file)
   → resumeController.upload()
     → resumeService.processUpload(file)
       → extractText(filePath, mimeType)     // PDF → pdf-parse, DOCX → mammoth
-      → aiEngine.analyzeResume(text)        // OpenAI → structured JSON
+      → aiEngine.analyzeResume(text)        // OpenRouter → structured JSON
       → resumeRepository.create({...})      // Mongoose → MongoDB
       → resume.save({ parsedContent })      // update with AI result
       → return resume

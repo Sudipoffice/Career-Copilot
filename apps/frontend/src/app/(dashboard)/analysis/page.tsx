@@ -17,7 +17,7 @@ export default function AnalysisPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<SkillGapResult | null>(null);
   const [error, setError] = useState('');
-  const [showQuotaBanner, setShowQuotaBanner] = useState(true);
+
 
   const load = useCallback(async () => {
     try {
@@ -78,15 +78,6 @@ export default function AnalysisPage() {
 
       {error && (
         <InfoBanner variant="error" title="Analysis failed" description={error} dismissable={false} />
-      )}
-
-      {showQuotaBanner && error && !analyzing && (
-        <InfoBanner
-          variant="warning"
-          title="AI analysis is temporarily unavailable"
-          description="The Gemini API quota has been exceeded. Your data is saved and ready when service resumes."
-          onDismiss={() => setShowQuotaBanner(false)}
-        />
       )}
 
       {resumes.length === 0 || jds.length === 0 ? (

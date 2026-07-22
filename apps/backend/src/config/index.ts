@@ -15,10 +15,10 @@ export const appConfig = {
   get mongoUri() {
     return getEnv().MONGODB_URI;
   },
-  get geminiKey() {
-    return getEnv().GEMINI_API_KEY;
+  get aiKey() {
+    return getEnv().OPENROUTER_API_KEY;
   },
-  get geminiModel() {
-    return getEnv().GEMINI_MODEL;
+  get aiModel() {
+    return getEnv().AI_MODEL;
   },
 };

@@ -1,18 +1,25 @@
-import { GoogleGenAI } from '@google/genai';
+import OpenAI from 'openai';
 
-export type AIClient = GoogleGenAI;
+export type AIClient = OpenAI;
 
-let genAI: AIClient | null = null;
+let ai: AIClient | null = null;
 
 export function createAIClient(apiKey: string): AIClient {
-  if (genAI) return genAI;
-  genAI = new GoogleGenAI({ apiKey });
-  return genAI;
+  if (ai) return ai;
+  ai = new OpenAI({
+    apiKey,
+    baseURL: 'https://openrouter.ai/api/v1',
+    defaultHeaders: {
+      'HTTP-Referer': 'https://career-copilot.ai',
+      'X-Title': 'Career Copilot AI',
+    },
+  });
+  return ai;
 }
 
 export function getAIClient(): AIClient {
-  if (!genAI) {
+  if (!ai) {
     throw new Error('AI client not initialized. Call createAIClient() first.');
   }
-  return genAI;
+  return ai;
 }

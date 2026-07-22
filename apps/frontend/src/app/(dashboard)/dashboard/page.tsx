@@ -5,14 +5,13 @@ import Link from 'next/link';
 import { FileText, Building2, Target, HelpCircle, BookOpen, ArrowRight, Upload, Clock } from 'lucide-react';
 import { api, type Resume, type SkillGapResult } from '@/lib/api-client';
 import { CareerReadinessScore } from '@/components/dashboard/career-readiness-score';
-import { InfoBanner } from '@/components/ui/info-banner';
 
 export default function DashboardPage() {
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [jdCount, setJdCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [latestSkillGap, setLatestSkillGap] = useState<SkillGapResult | null>(null);
-  const [showQuotaBanner, setShowQuotaBanner] = useState(true);
+
 
   const load = useCallback(async () => {
     try {
@@ -57,15 +56,6 @@ export default function DashboardPage() {
             : 'Upload a resume or paste a job description to get started.'}
         </p>
       </div>
-
-      {showQuotaBanner && totalItems > 0 && (
-        <InfoBanner
-          variant="warning"
-          title="AI analysis is temporarily unavailable"
-          description="The Gemini API quota has been exceeded. Your data is saved and analysis will resume when the service is available."
-          onDismiss={() => setShowQuotaBanner(false)}
-        />
-      )}
 
       {loading ? (
         <div className="space-y-4">
