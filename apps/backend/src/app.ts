@@ -13,16 +13,18 @@ export function createApp() {
   const app = express();
   const env = getEnv();
 
+  const corsOrigin = env.CORS_ORIGIN.replace(/\/+$/, '');
+
   // Security
   app.use(helmet({
     contentSecurityPolicy: {
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-        'frame-ancestors': [env.CORS_ORIGIN],
+        'frame-ancestors': [corsOrigin],
       },
     },
   }));
-  app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+  app.use(cors({ origin: corsOrigin, credentials: true }));
 
   // Compression
   app.use(compression());
