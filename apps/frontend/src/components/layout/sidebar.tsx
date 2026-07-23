@@ -19,7 +19,7 @@ export function Sidebar({ className, onNavigate }: { className?: string; onNavig
   const pathname = usePathname();
 
   return (
-    <aside className={cn('w-64 border-r bg-muted/40 flex flex-col', className)}>
+    <aside className={cn('w-64 border-r bg-muted/40 flex flex-col shrink-0', className)}>
       <Link href="/" className="flex items-center gap-2 border-b border-border px-4 py-3.5 text-lg font-semibold tracking-tight shrink-0">
         <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-white text-sm font-bold">
           CC

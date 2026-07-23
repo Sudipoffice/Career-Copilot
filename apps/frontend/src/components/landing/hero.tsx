@@ -93,7 +93,7 @@ function AIChatWidget() {
         <div className="h-7 w-7 rounded-full bg-amber-100 p-0.5 shrink-0 overflow-hidden border border-amber-200">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
+            src="https://raw.githubusercontent.com/Sudipoffice/portfolioImages/main/images/sudip.webp"
             alt="User Avatar"
             className="h-full w-full rounded-full object-cover"
           />
@@ -119,9 +119,9 @@ function TopProfileAvatar() {
     <div className="absolute -top-10 right-16 z-20 h-24 w-24 rounded-full bg-white p-1 shadow-lg shadow-black/10 border-2 border-primary overflow-hidden">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80"
-        alt="Adoma Eze Profile"
-        className="h-full w-full rounded-full object-cover grayscale"
+        src="https://raw.githubusercontent.com/Sudipoffice/portfolioImages/main/images/sudip.webp"
+        alt="Sudip Mandal Profile"
+        className="h-full w-full rounded-full object-cover "
       />
     </div>
   );
@@ -149,8 +149,8 @@ function ResumeStack() {
         {/* Header Row with Selected Box */}
         <div className="relative inline-block border-2 border-primary p-2 pr-6 rounded-md bg-orange-50/20">
           <div className="flex items-baseline gap-2">
-            <h1 className="font-serif text-3xl font-bold text-slate-900 tracking-tight">Adoma Eze</h1>
-            <span className="text-sm font-semibold text-slate-700">UX Engineer</span>
+            <h1 className="font-serif text-3xl font-bold text-slate-900 tracking-tight">Sudip Mandal</h1>
+            <span className="text-sm font-semibold text-slate-700">Full Stack Developer</span>
           </div>
 
           {/* Selection handles */}
@@ -169,16 +169,16 @@ function ResumeStack() {
 
         {/* Contact info bar */}
         <div className="mt-8 flex items-center gap-3 text-[11px] text-slate-600 font-medium flex-wrap">
-          <span>ma.eze@email.com</span>
-          <span>📞 +44 7700 900345</span>
-          <span>🌐 adomaeze.design</span>
-          <span>Bē adomaeze.dev</span>
-          <span>in adoma_codes</span>
+          <span>mandalsudipoffice@gmail.com</span>
+          <span>📞 +91 7003071143</span>
+          <span>🌐 sudipmandal.netlify.app</span>
+          <span>GitHub /sudipmandal</span>
+          <span>in sudip-mandal</span>
         </div>
 
         {/* Summary statement */}
         <p className="mt-6 text-xs text-slate-600 leading-relaxed font-serif italic text-center px-2">
-          A passionate user experience engineer committed to creating intuitive digital solutions by combining thoughtful design principles with clean, efficient code.
+          Full Stack Developer specializing in AI-integrated product features, REST APIs, and automated testing, with proven ownership of features end-to-end from design through deployment.
         </p>
 
         {/* Work Experience Section */}
@@ -190,45 +190,44 @@ function ResumeStack() {
           {/* Job 1 */}
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h4 className="text-sm font-bold text-slate-900">Senior UX Developer</h4>
+              <h4 className="text-sm font-bold text-slate-900">Full Stack Intern</h4>
               <span className="flex items-center gap-1 text-[10.5px] font-semibold text-primary">
                 <span className="h-2 w-2 rounded-full bg-primary" />
-                Cyberdyne Systems
+                Banao Technologies
               </span>
               <span className="flex items-center gap-1 text-[10.5px] text-slate-500">
-                <Briefcase className="h-3 w-3" /> Contract
+                <Briefcase className="h-3 w-3" /> Internship
               </span>
               <span className="flex items-center gap-1 text-[10.5px] text-slate-500">
-                <MapPin className="h-3 w-3" /> Berlin
+                <MapPin className="h-3 w-3" /> Kolkata
               </span>
             </div>
 
             <ul className="mt-2.5 space-y-1 text-[11px] text-slate-600 leading-normal">
-              <li className="flex items-start gap-1.5">• Engineered responsive web applications with React and Node.js.</li>
-              <li className="flex items-start gap-1.5">• Conducted A/B testing to optimize user engagement and conversion rates.</li>
-              <li className="flex items-start gap-1.5">• Implemented accessibility standards to ensure inclusive design.</li>
-              <li className="flex items-start gap-1.5">• Mentored junior developers in UX best practices and coding standards.</li>
-              <li className="flex items-start gap-1.5">• Integrated third-party APIs to enhance application functionality.</li>
+              <li className="flex items-start gap-1.5">• Engineered end-to-end full-stack features for an AI-driven recruitment platform using React.js, Next.js, Node.js, and Express.js.</li>
+              <li className="flex items-start gap-1.5">• Architected RESTful APIs, MongoDB data models, and JWT-based authentication with RBAC across 3 environments.</li>
+              <li className="flex items-start gap-1.5">• Integrated LLM (Gemini API) workflows for auto-generated documentation and candidate reports.</li>
+              <li className="flex items-start gap-1.5">• Designed a Playwright automation framework with daily test execution and failure analysis reporting.</li>
             </ul>
           </div>
 
           {/* Job 2 Preview */}
           <div className="mt-4 opacity-40">
             <div className="flex items-center gap-2 flex-wrap text-[10.5px] text-slate-500">
-              <span>tries</span>
+              <span>QA Tracker</span>
               <span>
                 <Briefcase className="h-3 w-3 inline mr-1" />
-                Full Time
+                Project
               </span>
               <span>
                 <MapPin className="h-3 w-3 inline mr-1" />
-                New York
+                Remote
               </span>
-              <span>Jun 2022 – Feb 2023</span>
+              <span>Full Stack</span>
             </div>
             <p className="mt-1 text-[10.5px] text-slate-500 leading-tight">
-              components for web applications...<br />
-              al teams to deliver high-quality products...
+              Full-stack QA task management platform with JWT auth...<br />
+              Analytics dashboard with MongoDB aggregation-driven stats...
             </p>
           </div>
         </div>
@@ -290,9 +289,9 @@ export function Hero() {
                   />
                 ))}
               </div>
-              <div>
+              {/* <div>
                 <span className="font-semibold text-foreground">2,400+</span> job seekers this month
-              </div>
+              </div> */}
             </div>
           </div>
 

@@ -2,7 +2,7 @@ import { SiteHeader } from '@/components/layout/site-header';
 import { Hero } from '@/components/landing/hero';
 import { HowItWorks } from '@/components/landing/how-it-works';
 import { Features } from '@/components/landing/features';
-import { Stats } from '@/components/landing/stats';
+// import { Stats } from '@/components/landing/stats';
 import { FeatureShowcase } from '@/components/landing/feature-showcase';
 import { QuestionsPreview } from '@/components/landing/questions-preview';
 import { StudyPlanPreview } from '@/components/landing/study-plan-preview';
@@ -17,7 +17,7 @@ export default function HomePage() {
       <Hero />
       <HowItWorks />
       <Features />
-      <Stats />
+      {/* <Stats /> */}
       <FeatureShowcase />
       <QuestionsPreview />
       <StudyPlanPreview />

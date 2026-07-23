@@ -22,6 +22,9 @@ export const metadata: Metadata = {
     'AI-powered career preparation platform. Analyze resumes, match job descriptions, improve ATS scores, and prepare for interviews with personalized AI-generated questions and study plans.',
   keywords: ['career', 'resume', 'job search', 'interview preparation', 'AI', 'ATS'],
   authors: [{ name: 'Career Copilot AI' }],
+  icons: {
+    icon: '/favicon.svg',
+  },
   openGraph: {
     title: 'Career Copilot AI',
     description: 'Land your dream job with AI-powered career preparation',
