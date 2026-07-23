@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: career-copilot-api
+    runtime: node
+    plan: free
+    buildCommand: pnpm install --frozen-lockfile
+    startCommand: pnpm --filter @career-copilot/api start:prod
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: CORS_ORIGIN
+        value: https://your-frontend-url.vercel.app
+      - key: PORT
+        value: 4000
