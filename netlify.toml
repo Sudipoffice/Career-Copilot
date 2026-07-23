@@ -1,5 +1,5 @@
 [build]
-  command = "pnpm install --frozen-lockfile && pnpm --filter @career-copilot/web build"
+  command = "pnpm install && pnpm --filter @career-copilot/web build && cp -r apps/frontend/public/. apps/frontend/.next/"
   publish = "apps/frontend/.next"
 
 [[headers]]
