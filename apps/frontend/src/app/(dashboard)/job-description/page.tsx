@@ -21,6 +21,7 @@ export default function JobDescriptionPage() {
 
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [selectedResume, setSelectedResume] = useState('');
+  const [analysisJdId, setAnalysisJdId] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<SkillGapResult | null>(null);
 
@@ -64,12 +65,12 @@ export default function JobDescriptionPage() {
   };
 
   const handleAnalyze = async () => {
-    if (!selectedResume || !selected) return;
+    if (!selectedResume || !analysisJdId) return;
     setAnalyzing(true);
     setError('');
     setResult(null);
     try {
-      const data = await api.analysis.skillGap({ resumeId: selectedResume, jdId: selected._id });
+      const data = await api.analysis.skillGap({ resumeId: selectedResume, jdId: analysisJdId });
       setResult(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Analysis failed');
@@ -82,8 +83,8 @@ export default function JobDescriptionPage() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Job Description</h2>
-          <p className="text-muted-foreground mt-1">Paste and analyze job descriptions, then match against your resume</p>
+          <h2 className="text-3xl font-bold tracking-tight">Skill Gap Analysis</h2>
+          <p className="text-muted-foreground mt-1">Compare your resume against job descriptions</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
@@ -205,8 +206,7 @@ export default function JobDescriptionPage() {
         </div>
 
         {selected && (
-          <div className="mt-6 space-y-6">
-            {/* JD Details — collapsible */}
+          <div className="mt-6">
             <details className="group rounded-xl border border-border" open>
               <summary className="flex items-center justify-between p-5 cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground transition-colors [&::-webkit-details-marker]:hidden">
                 <span className="flex items-center gap-2">
@@ -280,166 +280,180 @@ export default function JobDescriptionPage() {
                 )}
               </div>
             </details>
-
-            {/* Skill Gap Analysis */}
-            <div className="rounded-xl border border-border p-5 space-y-4">
-              <div className="flex items-center gap-2">
-                <Target className="h-4 w-4 text-primary" />
-                <h3 className="font-semibold text-sm">Skill Gap Analysis</h3>
-              </div>
-
-              {resumes.length === 0 ? (
-                <EmptyState
-                  icon={<FileText className="h-7 w-7" />}
-                  title="No Resume Uploaded"
-                  description="Upload a resume first to run a skill gap analysis."
-                  action={
-                    <a
-                      href="/resume"
-                      className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 transition-all"
-                    >
-                      <FileText className="h-4 w-4" />
-                      Upload Resume
-                    </a>
-                  }
-                />
-              ) : (
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="flex-1">
-                    <select
-                      value={selectedResume}
-                      onChange={(e) => setSelectedResume(e.target.value)}
-                      className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                    >
-                      <option value="">Select your resume...</option>
-                      {resumes.map((r) => (
-                        <option key={r._id} value={r._id}>{r.fileName}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <button
-                    onClick={handleAnalyze}
-                    disabled={!selectedResume || analyzing}
-                    className="inline-flex h-[42px] items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 shrink-0"
-                  >
-                    {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
-                    {analyzing ? 'Analyzing...' : 'Match'}
-                  </button>
-                </div>
-              )}
-
-              {analyzing && (
-                <AnimatedSteps
-                  messages={[
-                    'Loading resume and job description...',
-                    'Analyzing skill requirements...',
-                    'Comparing qualifications...',
-                    'Calculating match score...',
-                    'Generating recommendations...',
-                  ]}
-                />
-              )}
-
-              {result && (
-                <div className="space-y-5 pt-2">
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <ScoreCard
-                      label="Skill Match"
-                      value={result.matchPercentage}
-                      subtitle="Overall compatibility"
-                      why={`${result.matchingSkills.length} matching skills, ${result.missingSkills.length} gaps identified.`}
-                      size="lg"
-                      trend={result.matchPercentage >= 70 ? 'up' : 'down'}
-                    />
-                    <ScoreCard
-                      label="Coverage"
-                      value={result.matchingSkills.length + result.missingSkills.length > 0
-                        ? Math.round((result.matchingSkills.length / (result.matchingSkills.length + result.missingSkills.length)) * 100)
-                        : 0}
-                      subtitle="Skills you have vs. required"
-                      why={result.missingSkills.length > 0
-                        ? `You're missing ${result.missingSkills.length} of ${result.matchingSkills.length + result.missingSkills.length} required skills.`
-                        : 'All required skills covered.'}
-                    />
-                  </div>
-
-                  {result.matchingSkills.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-semibold text-emerald-700 mb-3">Matching Skills ({result.matchingSkills.length})</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {result.matchingSkills.map((s) => (
-                          <span key={s} className="inline-flex items-center gap-1 rounded-full bg-success-light px-3 py-1.5 text-xs font-medium text-success border border-emerald-200">
-                            <CheckCircle2 className="h-3 w-3" />
-                            {s}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {result.missingSkills.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-semibold text-rose-700 mb-3">Missing Skills ({result.missingSkills.length})</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {result.missingSkills.map((s) => (
-                          <span key={s} className="inline-flex items-center gap-1 rounded-full bg-danger-light px-3 py-1.5 text-xs font-medium text-danger border border-rose-200">
-                            <XCircle className="h-3 w-3" />
-                            {s}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {result.recommendations.length > 0 && (
-                    <div className="rounded-xl bg-stone-50 p-4 space-y-3">
-                      <h4 className="text-sm font-semibold flex items-center gap-2">
-                        <Lightbulb className="h-4 w-4 text-amber-500" />
-                        Recommendations
-                      </h4>
-                      <div className="space-y-2">
-                        {result.recommendations.map((r, i) => (
-                          <div key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
-                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium shrink-0 mt-0.5">{i + 1}</span>
-                            {r}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {result.resumeSuggestions.length > 0 && (
-                    <div className="rounded-xl bg-info-light/50 p-4 space-y-3">
-                      <h4 className="text-sm font-semibold flex items-center gap-2 text-info">
-                        <FileText className="h-4 w-4" />
-                        Resume Suggestions
-                      </h4>
-                      <div className="space-y-2">
-                        {result.resumeSuggestions.map((s, i) => (
-                          <div key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
-                            <ArrowRight className="h-3.5 w-3.5 text-info shrink-0 mt-0.5" />
-                            {s}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <NextSteps steps={[
-                    { label: 'Generate Interview Questions', href: '/questions' },
-                    { label: 'Create a Study Plan', href: '/study-plan' },
-                  ]} />
-                </div>
-              )}
-
-              {!analyzing && !result && resumes.length > 0 && (
-                <p className="text-xs text-muted-foreground text-center pt-2">
-                  Select your resume and click Match to see how you compare.
-                </p>
-              )}
-            </div>
           </div>
         )}
+
+        {/* Skill Gap Analysis */}
+        <div className="rounded-xl border border-border p-5 space-y-4 mt-6">
+          <div className="flex items-center gap-2">
+            <Target className="h-4 w-4 text-primary" />
+            <h3 className="font-semibold text-sm">Skill Gap Analysis</h3>
+          </div>
+
+          {resumes.length === 0 || jds.length === 0 ? (
+            <EmptyState
+              icon={<FileText className="h-7 w-7" />}
+              title={resumes.length === 0 ? 'No Resume Uploaded' : 'No Job Descriptions'}
+              description={resumes.length === 0 ? 'Upload a resume first to run a skill gap analysis.' : 'Create a job description first to run a skill gap analysis.'}
+              action={
+                <a
+                  href={resumes.length === 0 ? '/resume' : '/job-description'}
+                  className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 transition-all"
+                >
+                  <FileText className="h-4 w-4" />
+                  {resumes.length === 0 ? 'Upload Resume' : 'Create JD'}
+                </a>
+              }
+            />
+          ) : (
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1">
+                <select
+                  value={selectedResume}
+                  onChange={(e) => setSelectedResume(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                >
+                  <option value="">Select your resume...</option>
+                  {resumes.map((r) => (
+                    <option key={r._id} value={r._id}>{r.fileName}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1">
+                <select
+                  value={analysisJdId}
+                  onChange={(e) => setAnalysisJdId(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                >
+                  <option value="">Select a job description...</option>
+                  {jds.map((j) => (
+                    <option key={j._id} value={j._id}>
+                      {j.title}{j.company ? ` @ ${j.company}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                onClick={handleAnalyze}
+                disabled={!selectedResume || !analysisJdId || analyzing}
+                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 shrink-0"
+              >
+                {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+                {analyzing ? 'Analyzing...' : 'Match'}
+              </button>
+            </div>
+          )}
+
+          {analyzing && (
+            <AnimatedSteps
+              messages={[
+                'Loading resume and job description...',
+                'Analyzing skill requirements...',
+                'Comparing qualifications...',
+                'Calculating match score...',
+                'Generating recommendations...',
+              ]}
+            />
+          )}
+
+          {result && (
+            <div className="space-y-5 pt-2">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <ScoreCard
+                  label="Skill Match"
+                  value={result.matchPercentage}
+                  subtitle="Overall compatibility"
+                  why={`${result.matchingSkills.length} matching skills, ${result.missingSkills.length} gaps identified.`}
+                  size="lg"
+                  trend={result.matchPercentage >= 70 ? 'up' : 'down'}
+                />
+                <ScoreCard
+                  label="Coverage"
+                  value={result.matchingSkills.length + result.missingSkills.length > 0
+                    ? Math.round((result.matchingSkills.length / (result.matchingSkills.length + result.missingSkills.length)) * 100)
+                    : 0}
+                  subtitle="Skills you have vs. required"
+                  why={result.missingSkills.length > 0
+                    ? `You're missing ${result.missingSkills.length} of ${result.matchingSkills.length + result.missingSkills.length} required skills.`
+                    : 'All required skills covered.'}
+                />
+              </div>
+
+              {result.matchingSkills.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-emerald-700 mb-3">Matching Skills ({result.matchingSkills.length})</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {result.matchingSkills.map((s) => (
+                      <span key={s} className="inline-flex items-center gap-1 rounded-full bg-success-light px-3 py-1.5 text-xs font-medium text-success border border-emerald-200">
+                        <CheckCircle2 className="h-3 w-3" />
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {result.missingSkills.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-rose-700 mb-3">Missing Skills ({result.missingSkills.length})</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {result.missingSkills.map((s) => (
+                      <span key={s} className="inline-flex items-center gap-1 rounded-full bg-danger-light px-3 py-1.5 text-xs font-medium text-danger border border-rose-200">
+                        <XCircle className="h-3 w-3" />
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {result.recommendations.length > 0 && (
+                <div className="rounded-xl bg-stone-50 p-4 space-y-3">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <Lightbulb className="h-4 w-4 text-amber-500" />
+                    Recommendations
+                  </h4>
+                  <div className="space-y-2">
+                    {result.recommendations.map((r, i) => (
+                      <div key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium shrink-0 mt-0.5">{i + 1}</span>
+                        {r}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {result.resumeSuggestions.length > 0 && (
+                <div className="rounded-xl bg-info-light/50 p-4 space-y-3">
+                  <h4 className="text-sm font-semibold flex items-center gap-2 text-info">
+                    <FileText className="h-4 w-4" />
+                    Resume Suggestions
+                  </h4>
+                  <div className="space-y-2">
+                    {result.resumeSuggestions.map((s, i) => (
+                      <div key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
+                        <ArrowRight className="h-3.5 w-3.5 text-info shrink-0 mt-0.5" />
+                        {s}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <NextSteps steps={[
+                { label: 'Generate Interview Questions', href: '/questions' },
+                { label: 'Create a Study Plan', href: '/study-plan' },
+              ]} />
+            </div>
+          )}
+
+          {!analyzing && !result && resumes.length > 0 && jds.length > 0 && (
+            <p className="text-xs text-muted-foreground text-center pt-2">
+              Select your resume and a job description, then click Match.
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

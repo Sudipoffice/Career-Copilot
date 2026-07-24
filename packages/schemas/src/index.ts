@@ -60,8 +60,11 @@ export type QuestionGenInput = z.infer<typeof questionGenSchema>;
 export const studyPlanSchema = z.object({
   goal: z.string().max(1000).optional(),
   resumeId: z.string().length(24).optional(),
+  jdId: z.string().length(24).optional(),
   durationWeeks: z.coerce.number().min(1).max(52),
-  focusAreas: z.array(z.string()).min(1).max(10),
+  focusAreas: z.array(z.string()).max(10).default([]),
+}).refine((data) => data.resumeId || data.jdId, {
+  message: 'Either resumeId or jdId is required',
 });
 
 export type StudyPlanInput = z.infer<typeof studyPlanSchema>;

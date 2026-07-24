@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { BookOpen, Goal, Clock, CheckCircle2, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
-import { api, type Resume, type StudyPlan } from '@/lib/api-client';
+import { api, type Resume, type JobDescription, type StudyPlan } from '@/lib/api-client';
 import { AnimatedSteps } from '@/components/ui/animated-steps';
 import { FileUploadZone } from '@/components/ui/file-upload-zone';
 
@@ -19,19 +19,31 @@ export default function StudyPlanPage() {
   const [loadingResumes, setLoadingResumes] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [jds, setJds] = useState<JobDescription[]>([]);
+  const [selectedJd, setSelectedJd] = useState('');
+  const [loadingJds, setLoadingJds] = useState(true);
 
   const loadResumes = useCallback(async () => {
     try {
       const data = await api.resume.list();
       setResumes(data);
       if (data.length > 0) setSelectedResume(data[0]!._id);
-    } catch {
-    } finally {
+    } catch { void 0; } finally {
       setLoadingResumes(false);
     }
   }, []);
 
-  useEffect(() => { loadResumes(); }, [loadResumes]);
+  const loadJds = useCallback(async () => {
+    try {
+      const data = await api.jd.list();
+      setJds(data);
+      if (data.length > 0) setSelectedJd(data[0]!._id);
+    } catch { void 0; } finally {
+      setLoadingJds(false);
+    }
+  }, []);
+
+  useEffect(() => { loadResumes(); loadJds(); }, [loadResumes, loadJds]);
 
   const addFocusArea = () => {
     const trimmed = focusAreaInput.trim();
@@ -47,7 +59,10 @@ export default function StudyPlanPage() {
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (focusAreas.length === 0) return;
+    if (!selectedResume && !selectedJd) {
+      setError('Select at least a Resume or a Job Description');
+      return;
+    }
     setGenerating(true);
     setError('');
     setPlan(null);
@@ -55,6 +70,7 @@ export default function StudyPlanPage() {
       const result = await api.studyPlan.generate({
         goal: goal || undefined,
         resumeId: selectedResume || undefined,
+        jdId: selectedJd || undefined,
         durationWeeks,
         focusAreas,
       });
@@ -98,33 +114,59 @@ export default function StudyPlanPage() {
       <div className={`grid lg:grid-cols-5 gap-6`}>
         <div className={`${!plan ? 'lg:col-span-5' : 'lg:col-span-2'}`}>
           <form onSubmit={handleGenerate} className="rounded-2xl border border-border p-6 space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-1.5 block">
-                Your Resume <span className="text-muted-foreground font-normal">(recommended)</span>
-              </label>
-              {loadingResumes ? (
-                <div className="h-10 rounded-xl bg-stone-100 animate-pulse" />
-              ) : resumes.length > 0 ? (
-                <select
-                  value={selectedResume}
-                  onChange={(e) => setSelectedResume(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                >
-                  <option value="">No resume selected</option>
-                  {resumes.map((r) => (
-                    <option key={r._id} value={r._id}>{r.fileName}</option>
-                  ))}
-                </select>
-              ) : (
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground">No resume uploaded yet. Upload one now:</p>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">
+                  Your Resume <span className="text-muted-foreground font-normal">(optional)</span>
+                </label>
+                {loadingResumes ? (
+                  <div className="h-10 rounded-xl bg-stone-100 animate-pulse" />
+                ) : resumes.length > 0 ? (
+                  <select
+                    value={selectedResume}
+                    onChange={(e) => setSelectedResume(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                  >
+                    <option value="">None</option>
+                    {resumes.map((r) => (
+                      <option key={r._id} value={r._id}>{r.fileName}</option>
+                    ))}
+                  </select>
+                ) : (
                   <FileUploadZone
                     uploading={uploading}
                     uploadProgress={uploadProgress}
                     onFile={handleInlineUpload}
                   />
-                </div>
-              )}
+                )}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">
+                  Job Description <span className="text-muted-foreground font-normal">(optional)</span>
+                </label>
+                {loadingJds ? (
+                  <div className="h-10 rounded-xl bg-stone-100 animate-pulse" />
+                ) : jds.length > 0 ? (
+                  <select
+                    value={selectedJd}
+                    onChange={(e) => setSelectedJd(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                  >
+                    <option value="">None</option>
+                    {jds.map((j) => (
+                      <option key={j._id} value={j._id}>
+                        {j.title}{j.company ? ` @ ${j.company}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    No job descriptions yet.{' '}
+                    <a href="/job-description" className="text-primary hover:underline">Create one</a>.
+                  </p>
+                )}
+              </div>
             </div>
 
             <div>
@@ -153,8 +195,10 @@ export default function StudyPlanPage() {
               </select>
             </div>
 
-            <div>
-              <label className="text-sm font-medium mb-1.5 block">Focus Areas *</label>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">
+                  Focus Areas <span className="text-muted-foreground font-normal">(optional)</span>
+                </label>
               <div className="flex gap-2">
                 <input
                   value={focusAreaInput}
@@ -187,7 +231,7 @@ export default function StudyPlanPage() {
             <div className="flex justify-center">
               <button
                 type="submit"
-                disabled={generating || focusAreas.length === 0}
+                disabled={generating}
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-primary px-8 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
               >
                 {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <BookOpen className="h-4 w-4" />}

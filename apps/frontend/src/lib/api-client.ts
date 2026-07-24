@@ -170,7 +170,7 @@ export const api = {
   },
 
   studyPlan: {
-    generate: (data: { goal?: string; resumeId?: string; durationWeeks: number; focusAreas: string[] }) =>
+    generate: (data: { goal?: string; resumeId?: string; jdId?: string; durationWeeks: number; focusAreas: string[] }) =>
       request<StudyPlan>('/study-plan/generate', { method: 'POST', body: JSON.stringify(data) }),
   },
 };

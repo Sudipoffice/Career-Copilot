@@ -12,6 +12,7 @@ import {
   skillGapSchema,
   questionSchema,
   aiStudyPlanSchema,
+  extractJSON,
   parseAIResponse,
 } from '@career-copilot/ai';
 
@@ -45,6 +46,17 @@ async function callAI(systemPrompt: string, userMessage: string): Promise<string
   return text;
 }
 
+function stripNulls(obj: unknown): unknown {
+  if (obj === null) return undefined;
+  if (Array.isArray(obj)) return obj.map(stripNulls);
+  if (typeof obj === 'object' && obj !== null) {
+    return Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => [k, stripNulls(v)]),
+    );
+  }
+  return obj;
+}
+
 export const aiEngine = {
   async analyzeResume(resumeText: string) {
     const text = await callAI(RESUME_ANALYSIS_PROMPT, resumeText);
@@ -53,7 +65,8 @@ export const aiEngine = {
 
   async analyzeJD(jdText: string) {
     const text = await callAI(JOB_DESCRIPTION_PROMPT, jdText);
-    return parseAIResponse(text, jobDescriptionSchema);
+    const raw = JSON.parse(extractJSON(text));
+    return jobDescriptionSchema.parse(stripNulls(raw));
   },
 
   async analyzeSkillGap(resumeText: string, jdText: string) {
@@ -82,6 +95,12 @@ export const aiEngine = {
 
   async generateStudyPlanFromResume(resumeText: string, goal: string, weeks: number, focusAreas: string[]) {
     const userMessage = `Resume Context:\n${resumeText}\n\nGoal: ${goal || 'Career growth'}\nDuration: ${weeks} weeks\nFocus Areas: ${focusAreas.join(', ')}`;
+    const text = await callAI(STUDY_PLAN_PROMPT, userMessage);
+    return parseAIResponse(text, aiStudyPlanSchema);
+  },
+
+  async generateStudyPlanFromJD(jdText: string, goal: string, weeks: number, focusAreas: string[]) {
+    const userMessage = `Job Description:\n${jdText}\n\nGoal: ${goal || 'Prepare for this role'}\nDuration: ${weeks} weeks\nFocus Areas: ${focusAreas.join(', ')}`;
     const text = await callAI(STUDY_PLAN_PROMPT, userMessage);
     return parseAIResponse(text, aiStudyPlanSchema);
   },

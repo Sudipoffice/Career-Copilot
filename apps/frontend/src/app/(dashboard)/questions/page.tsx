@@ -11,7 +11,7 @@ import { AnimatedSteps } from '@/components/ui/animated-steps';
 const STORAGE_KEY = 'cc-questions-data';
 
 function saveToSession(data: { questions: Question[]; source: string; count: number }) {
-  try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
+  try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch { void 0; }
 }
 
 function loadFromSession(): { questions: Question[]; source: string; count: number } | null {

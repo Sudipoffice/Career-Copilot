@@ -29,6 +29,7 @@ Thumbs.db
 
 # Logs
 *.log
+*.pdf
 npm-debug.log*
 
 # Coverage
