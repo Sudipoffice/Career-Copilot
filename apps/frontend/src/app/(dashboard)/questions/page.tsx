@@ -1,15 +1,32 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, HelpCircle, Sparkles, AlertCircle, FileText } from 'lucide-react';
+import { Loader2, HelpCircle, Sparkles, AlertCircle, FileText, User } from 'lucide-react';
 import Link from 'next/link';
-import { api, type JobDescription, type Question } from '@/lib/api-client';
+import { api, type Resume, type JobDescription, type Question } from '@/lib/api-client';
 import { EmptyState } from '@/components/ui/empty-state';
 import { NextSteps } from '@/components/ui/next-steps';
+import { AnimatedSteps } from '@/components/ui/animated-steps';
+
+const STORAGE_KEY = 'cc-questions-data';
+
+function saveToSession(data: { questions: Question[]; source: string; count: number }) {
+  try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
+}
+
+function loadFromSession(): { questions: Question[]; source: string; count: number } | null {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
 
 export default function QuestionsPage() {
+  const [resumes, setResumes] = useState<Resume[]>([]);
   const [jds, setJds] = useState<JobDescription[]>([]);
+  const [sourceType, setSourceType] = useState<'jd' | 'resume'>('jd');
   const [selectedJd, setSelectedJd] = useState('');
+  const [selectedResume, setSelectedResume] = useState('');
   const [count, setCount] = useState(10);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,10 +36,16 @@ export default function QuestionsPage() {
 
   const load = useCallback(async () => {
     try {
-      const data = await api.jd.list();
-      setJds(data);
+      const [jdData, resumeData] = await Promise.all([api.jd.list(), api.resume.list()]);
+      setJds(jdData);
+      setResumes(resumeData);
+      const cached = loadFromSession();
+      if (cached) {
+        setQuestions(cached.questions);
+        setCount(cached.count);
+      }
     } catch {
-      setError('Failed to load job descriptions');
+      setError('Failed to load data');
     } finally {
       setLoading(false);
     }
@@ -30,13 +53,21 @@ export default function QuestionsPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    if (!generating && questions.length > 0) {
+      saveToSession({ questions, source: sourceType, count });
+    }
+  }, [questions, generating, sourceType, count]);
+
   const handleGenerate = async () => {
-    if (!selectedJd) return;
     setGenerating(true);
     setError('');
     setQuestions([]);
     try {
-      const result = await api.questions.generate({ jdId: selectedJd, count });
+      const params = sourceType === 'jd'
+        ? { jdId: selectedJd, count }
+        : { resumeId: selectedResume, count };
+      const result = await api.questions.generate(params);
       setQuestions(result.questions);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Generation failed');
@@ -69,10 +100,10 @@ export default function QuestionsPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="max-w-4xl mx-auto space-y-6">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Interview Questions</h2>
-          <p className="text-muted-foreground mt-1">Generate practice questions from a job description</p>
+          <p className="text-muted-foreground mt-1">Generate practice questions from a job description or resume</p>
         </div>
         <div className="space-y-4">
           {[1, 2, 3, 4].map((i) => (
@@ -84,10 +115,10 @@ export default function QuestionsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Interview Questions</h2>
-        <p className="text-muted-foreground mt-1">Generate practice questions from a job description</p>
+        <p className="text-muted-foreground mt-1">Generate practice questions from a job description or resume</p>
       </div>
 
       {error && (
@@ -97,29 +128,78 @@ export default function QuestionsPage() {
         </div>
       )}
 
-      {jds.length === 0 ? (
-        <EmptyState
-          icon={<FileText className="h-7 w-7" />}
-          title="No Job Description"
-          description="Add a job description first to generate tailored interview questions."
-          action={<Link href="/job-description" className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 transition-all"><FileText className="h-4 w-4" />Add JD</Link>}
-        />
+      {jds.length === 0 && (sourceType === 'jd' || resumes.length === 0) ? (
+        <div className="grid lg:grid-cols-2 gap-6">
+          {jds.length === 0 && (
+            <EmptyState
+              icon={<FileText className="h-7 w-7" />}
+              title="No Job Description"
+              description="Add a job description to generate tailored interview questions."
+              action={<Link href="/job-description" className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 transition-all"><FileText className="h-4 w-4" />Add JD</Link>}
+            />
+          )}
+          {resumes.length === 0 && (
+            <EmptyState
+              icon={<User className="h-7 w-7" />}
+              title="No Resume Uploaded"
+              description="Upload a resume to generate questions based on your skills."
+              action={<Link href="/resume" className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 transition-all"><FileText className="h-4 w-4" />Upload Resume</Link>}
+            />
+          )}
+        </div>
       ) : (
         <>
           <div className="flex flex-col sm:flex-row gap-4 items-end">
             <div className="flex-1 w-full">
-              <label className="text-sm font-medium mb-1.5 block">Job Description</label>
-              <select
-                value={selectedJd}
-                onChange={(e) => setSelectedJd(e.target.value)}
-                className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-              >
-                <option value="">Select a job description...</option>
-                {jds.map((j) => (
-                  <option key={j._id} value={j._id}>{j.title}{j.company ? ` @ ${j.company}` : ''}</option>
-                ))}
-              </select>
+              <label className="text-sm font-medium mb-1.5 block">Source</label>
+              <div className="flex gap-1.5 rounded-xl border border-border p-1 bg-stone-50">
+                <button
+                  onClick={() => setSourceType('jd')}
+                  className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                    sourceType === 'jd' ? 'bg-white text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Job Description
+                </button>
+                <button
+                  onClick={() => setSourceType('resume')}
+                  className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                    sourceType === 'resume' ? 'bg-white text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  My Resume
+                </button>
+              </div>
             </div>
+            {sourceType === 'jd' ? (
+              <div className="flex-1 w-full">
+                <label className="text-sm font-medium mb-1.5 block">Job Description</label>
+                <select
+                  value={selectedJd}
+                  onChange={(e) => setSelectedJd(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                >
+                  <option value="">Select a job description...</option>
+                  {jds.map((j) => (
+                    <option key={j._id} value={j._id}>{j.title}{j.company ? ` @ ${j.company}` : ''}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div className="flex-1 w-full">
+                <label className="text-sm font-medium mb-1.5 block">Your Resume</label>
+                <select
+                  value={selectedResume}
+                  onChange={(e) => setSelectedResume(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                >
+                  <option value="">Select a resume...</option>
+                  {resumes.map((r) => (
+                    <option key={r._id} value={r._id}>{r.fileName}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="w-24">
               <label className="text-sm font-medium mb-1.5 block">Count</label>
               <input
@@ -133,7 +213,10 @@ export default function QuestionsPage() {
             </div>
             <button
               onClick={handleGenerate}
-              disabled={!selectedJd || generating}
+              disabled={
+                generating ||
+                (sourceType === 'jd' ? !selectedJd : !selectedResume)
+              }
               className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
             >
               {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
@@ -142,18 +225,25 @@ export default function QuestionsPage() {
           </div>
 
           {generating && (
-            <div className="rounded-2xl border border-border p-8 text-center space-y-3">
-              <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
-              <p className="text-sm font-medium">Generating questions based on the job description...</p>
-              <div className="flex justify-center gap-3">
-                {['Analyzing JD', 'Generating', 'Formatting'].map((step, i) => (
-                  <span key={step} className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <span className={`h-1.5 w-1.5 rounded-full ${i < 2 ? 'bg-emerald-500' : 'bg-stone-300'}`} />
-                    {step}
-                  </span>
-                ))}
-              </div>
-            </div>
+            <AnimatedSteps
+              messages={
+                sourceType === 'jd'
+                  ? [
+                      'Analyzing job requirements...',
+                      'Identifying key skills needed...',
+                      'Crafting relevant questions...',
+                      'Categorizing by difficulty...',
+                      'Formatting your practice set...',
+                    ]
+                  : [
+                      'Scanning your resume...',
+                      'Identifying your key skills...',
+                      'Generating personalized questions...',
+                      'Aligning with experience level...',
+                      'Formatting your practice set...',
+                    ]
+              }
+            />
           )}
 
           {questions.length > 0 && (
@@ -232,7 +322,7 @@ export default function QuestionsPage() {
             <EmptyState
               icon={<HelpCircle className="h-7 w-7" />}
               title="Select & Generate"
-              description="Choose a job description and click Generate to create tailored interview questions."
+              description="Choose a source (job description or resume) and click Generate to create tailored interview questions."
             />
           )}
         </>

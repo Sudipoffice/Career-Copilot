@@ -46,16 +46,20 @@ export type ResumeScoreInput = z.infer<typeof resumeScoreSchema>;
 
 // ─── Question Generation ────────────────────────────────
 export const questionGenSchema = z.object({
-  jdId: z.string().length(24),
+  jdId: z.string().length(24).optional(),
+  resumeId: z.string().length(24).optional(),
   count: z.coerce.number().min(1).max(20).default(10),
   types: z.array(z.enum(['behavioral', 'technical', 'situational'])).optional(),
+}).refine((data) => data.jdId || data.resumeId, {
+  message: 'Either jdId or resumeId is required',
 });
 
 export type QuestionGenInput = z.infer<typeof questionGenSchema>;
 
 // ─── Study Plan ─────────────────────────────────────────
 export const studyPlanSchema = z.object({
-  goal: z.string().min(10).max(1000),
+  goal: z.string().max(1000).optional(),
+  resumeId: z.string().length(24).optional(),
   durationWeeks: z.coerce.number().min(1).max(52),
   focusAreas: z.array(z.string()).min(1).max(10),
 });

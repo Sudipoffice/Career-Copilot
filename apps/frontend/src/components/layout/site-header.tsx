@@ -1,15 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Menu, X, Github, Home, FileText, Search, LayoutDashboard, BarChart3, HelpCircle, BookOpen, Sparkles, PlayCircle, ChevronDown } from 'lucide-react';
+import { Menu, X, Github, Home, FileText, Search, LayoutDashboard, HelpCircle, BookOpen, Sparkles, PlayCircle, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@career-copilot/ui';
 
 const dashboardSubLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/resume', label: 'Resume', icon: FileText },
-  { href: '/job-description', label: 'Job Description', icon: Search },
-  { href: '/analysis', label: 'Analysis', icon: BarChart3 },
+  { href: '/job-description', label: 'Skill Gap Analysis', icon: Search },
   { href: '/questions', label: 'Interview Questions', icon: HelpCircle },
   { href: '/study-plan', label: 'Study Plan', icon: BookOpen },
 ];

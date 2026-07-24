@@ -28,7 +28,7 @@ export default function DashboardPage() {
   const cards = [
     { href: '/resume', icon: FileText, label: 'Resume', desc: 'Upload and analyze your resume for ATS compatibility', count: resumes.length, color: 'from-orange-400 to-amber-500' },
     { href: '/job-description', icon: Building2, label: 'Job Description', desc: 'Paste JDs and extract structured insights', count: jdCount, color: 'from-blue-400 to-indigo-500' },
-    { href: '/analysis', icon: Target, label: 'Skill Gap', desc: 'Compare your resume against any job description', color: 'from-violet-400 to-purple-500' },
+    { href: '/job-description', icon: Target, label: 'Skill Match', desc: 'Compare your resume against any job description', color: 'from-violet-400 to-purple-500' },
     { href: '/questions', icon: HelpCircle, label: 'Questions', desc: 'Generate practice interview questions', color: 'from-emerald-400 to-teal-500' },
     { href: '/study-plan', icon: BookOpen, label: 'Study Plan', desc: 'Create a personalized learning roadmap', color: 'from-rose-400 to-pink-500' },
   ];

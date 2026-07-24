@@ -1,6 +1,6 @@
 'use client';
 
-import { FileText, Search, BarChart3, HelpCircle, BookOpen, Home, LayoutDashboard } from 'lucide-react';
+import { FileText, Search, HelpCircle, BookOpen, Home, LayoutDashboard } from 'lucide-react';
 import { cn } from '@career-copilot/ui';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -9,8 +9,7 @@ const navItems = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/resume', label: 'Resume', icon: FileText },
-  { href: '/job-description', label: 'Job Description', icon: Search },
-  { href: '/analysis', label: 'Analysis', icon: BarChart3 },
+  { href: '/job-description', label: 'Skill Gap Analysis', icon: Search },
   { href: '/questions', label: 'Interview Questions', icon: HelpCircle },
   { href: '/study-plan', label: 'Study Plan', icon: BookOpen },
 ];

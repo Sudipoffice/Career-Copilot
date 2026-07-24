@@ -14,252 +14,251 @@ apps/
 └── backend/  — API layer (HTTP server, business logic)
 
 packages/
-├── ui/      — Presentational components
+├── ui/      — Presentational components (Button, Card, Input, Toast, cn())
 ├── shared/  — Utilities & constants
 ├── types/   — TypeScript type definitions
 ├── schemas/ — Zod validation schemas
 ├── config/  — Environment & app configuration
-└── ai/      — AI-related code
+└── ai/      — AI client, prompts, schemas, parsers
 ```
 
 **Why separate packages?**
 
 - **`packages/schemas`** — Single source of truth for validation. Frontend and backend both import from here, ensuring that request/response shapes are always in sync.
 - **`packages/types`** — Shared TypeScript interfaces prevent type drift between the API response types and what the frontend expects.
-- **`packages/ai`** — Isolates AI prompt engineering, JSON output schemas, and parsing logic. The API layer calls `@career-copilot/ai` rather than dealing with OpenAI directly.
+- **`packages/ai`** — Isolates AI prompt engineering, JSON output schemas, and parsing logic. The API layer calls `@career-copilot/ai` rather than dealing with OpenRouter directly.
 - **`packages/config`** — Centralizes environment loading and validation. Both apps validate their environment at startup using the same Zod schema.
 - **`packages/shared`** — Constants, helpers, and utilities used across both apps.
 - **`packages/ui`** — Design system components that could eventually be published independently.
 
-### Frontend (`apps/frontend`) Architecture (Feature-Based)
+### Frontend (`apps/frontend`) Architecture
 
 ```
 src/
-├── app/             # Next.js App Router (routes, layouts)
-├── components/      # Shared UI components (layout, providers)
-├── features/        # Feature modules (resume, jd, analysis, etc.)
-├── hooks/           # Shared React hooks
-├── services/        # API client and service functions
-├── store/           # Zustand state stores
-├── lib/             # Utility libraries
-├── utils/           # Pure utility functions
-├── constants/       # Constants and enum-like objects
-├── types/           # Frontend-specific types
-├── styles/          # Global CSS
-└── config/          # Frontend configuration
+├── app/             # Next.js App Router (routes, layouts, error/loading/404)
+├── components/      # Shared UI components
+│   ├── landing/     # Landing page: hero, how-it-works, features, FAQ, footer, etc.
+│   ├── layout/      # SiteHeader, Sidebar, DashboardLayout
+│   ├── providers/   # QueryClient, Theme, Toast providers
+│   ├── ui/          # Reusable primitives: file-upload-zone, score-card, empty-state, etc.
+│   └── dashboard/   # Career readiness score component
+├── features/        # Feature modules (placeholders — actual implementation in pages)
+├── hooks/           # Shared React hooks (use-resume-upload, use-analysis, use-debounce)
+├── services/        # API service functions
+├── store/           # Zustand state stores (resume, analysis, UI)
+├── lib/             # Typed API client class (api-client.ts)
+├── utils/           # Pure utility functions (date formatting, file validation)
+├── constants/       # ROUTES and QUERY_KEYS
+├── types/           # Re-exports from @career-copilot/types
+├── styles/          # Tailwind CSS v4 globals
+└── config/          # Zod-validated env vars, site constants
 ```
 
-**Why feature-based?** As the application grows, grouping code by feature (not by type) makes it easier to locate related files, reduces merge conflicts, and keeps modules self-contained. Each feature folder contains its own components, hooks, and API calls.
+**Nav structure:**
+- **Landing page** ( `/` ): Shows `SiteHeader` with Home, How It Works, Features links + a hover-expandable Dashboard dropdown (Resume, JD, Analysis, Questions, Plan).
+- **Dashboard pages** ( `/dashboard`, `/resume`, etc. ): Shows `Sidebar` only (no top nav). Sidebar has brand logo at top and 7 items: Home, Dashboard, Resume, Job Description, Analysis, Interview Questions, Study Plan. The sidebar is `sticky top-0 h-dvh` and the main content area scrolls independently.
 
 ### Backend (`apps/backend`) Architecture (Layered)
 
 ```
 src/
-├── config/          # App configuration
+├── index.ts         # Entry point: loadEnv → connectDB → createApp → listen
+├── app.ts           # Express app factory (middleware stack, route mounting)
+├── config/          # App configuration from @career-copilot/config
 ├── controllers/     # Request handlers (thin — delegates to services)
-├── services/        # Business logic
-├── repositories/    # Data access layer (MongoDB queries)
-├── routes/          # Route definitions
-├── middlewares/      # Express middleware
-├── models/          # Mongoose schemas
-├── interfaces/      # Shared interfaces
+├── services/        # Business logic orchestration (resume, jd, analysis, questions, study-plan)
+├── repositories/    # Data access layer (MongoDB queries via Mongoose)
+├── routes/v1/       # Route definitions (health, resume, jd, analysis, questions, study-plan)
+├── middlewares/     # Express middleware (error-handler, validate, upload, not-found, request-id)
+├── models/          # Mongoose schemas (Resume, JobDescription)
+├── interfaces/      # TypeScript interfaces
 ├── types/           # Backend-specific types
-├── utils/           # Utility functions
-├── lib/             # Core libraries (db, ai-engine)
-└── storage/         # File storage abstraction
+├── utils/           # APIError class, text-extractor (PDF/DOCX)
+├── lib/             # Core libraries (ai-engine, db, logger)
+├── storage/         # Storage provider interface (local/S3)
+└── constants/       # Allowed MIME types, max sizes, skill categories
 ```
 
 **Why layered?** Controllers handle HTTP concerns, services contain business logic, repositories manage data access. This separation makes the codebase testable, maintainable, and adaptable to change.
 
 ### API Versioning
 
-Routes are mounted under `/api/v1/` via `API_PREFIX`. This allows introducing v2 alongside v1 without breaking existing clients.
+Routes are mounted under `/api/v1/` via `API_PREFIX`. This allows introducing v2 alongside v1 without breaking existing clients. A root-level `/health` endpoint is also available outside the prefix.
 
-### Design System
+### AI Provider
 
-Design tokens live in `packages/config/src/design-tokens.ts` and are consumed by the TailwindCSS theme in the frontend. This enforces visual consistency across all UI components.
+**Model:** `deepseek/deepseek-chat-v3.1` via **OpenRouter** (OpenAI-compatible SDK).
+
+Key configuration:
+- `response_format: { type: 'json_object' }` — forces valid JSON from the LLM
+- `temperature: 0.3` — low temperature for deterministic structured output
+- Zod schema validation on all AI responses before they reach application code
 
 ---
 
-## Implementation Progress
-
-### ✅ Step 1 — Database Connection (index.ts → lib/db.ts)
-
-**File:** `apps/backend/src/index.ts`
-
-The server bootstrap now calls `connectDB()` before starting the HTTP listener:
+## Request Flow
 
 ```
-loadEnv() → connectDB() → createApp() → listen()
+HTTP Request
+  → helmet (security headers, CSP with frame-ancestors)
+  → cors (configured origin, trailing slash stripped)
+  → compression
+  → body parsing (JSON 10mb limit, urlencoded)
+  → requestId (UUID attached to req/res)
+  → morgan (HTTP logging)
+  → [GET /health root health check]
+  → v1Router at /api/v1
+     → healthRouter       (GET /health)
+     → resumeRouter       (POST /upload, GET /, GET /:id, GET /:id/file, DELETE /:id)
+     → jdRouter           (POST /, GET /, GET /:id, DELETE /:id)
+     → analysisRouter     (POST /skill-gap, POST /resume-score)
+     → questionsRouter    (POST /generate)
+     → studyPlanRouter    (POST /generate)
+  → notFoundHandler (404)
+  → errorHandler (catches ZodError, AppError, generic errors)
 ```
 
-`connectDB()` (in `lib/db.ts`) uses Mongoose to connect to MongoDB using `MONGODB_URI` and `MONGODB_DB_NAME` from the environment. On failure, it logs the error and exits — the server never starts without a database.
+## Data Flow Patterns
 
-On graceful shutdown (SIGTERM/SIGINT), the server closes HTTP connections first, then calls `mongoose.disconnect()`.
-
-**Interview Takeaway:**
-
-- MongoDB connection is a prerequisite for the server — fail fast if DB is down.
-- Graceful shutdown: close HTTP → close DB → exit, with a 10s forced shutdown fallback.
-
-### ✅ Step 2 — Repositories (Data Access Layer)
-
-**Files:**
-
-- `apps/backend/src/repositories/resume-repository.ts`
-- `apps/backend/src/repositories/jd-repository.ts`
-
-Repositories are the data access layer. They wrap Mongoose operations and return typed documents. Services call repositories — controllers never touch Mongoose directly.
+### Controller → Service → Repository
 
 ```
-Controller → Service → Repository → Mongoose Model → MongoDB
+Controller → Service → aiEngine (AI analysis via @career-copilot/ai)
+                       → Repository (MongoDB persistence)
 ```
 
-Each repository exposes a consistent interface:
-
-| Method           | Purpose                                       |
-| ---------------- | --------------------------------------------- |
-| `create(data)`   | Insert a document, return it                  |
-| `findAll()`      | List all documents, newest first              |
-| `findById(id)`   | Find by MongoDB `_id`, return null if missing |
-| `deleteById(id)` | Delete by MongoDB `_id`                       |
-
-Since the MVP has no auth, `userId` is optional on both models. When auth is added later, it becomes required.
-
-**Why this matters for interviews:**
-
-- **Separation of concerns** — if you switch from MongoDB to PostgreSQL, only the repository layer changes. Controllers and services stay untouched.
-- **Testability** — you can mock the repository when testing services.
-- **Consistent error boundary** — all DB errors surface through one layer.
-
-### ✅ Step 3 — AI Engine (Orchestration Layer)
-
-**File:** `apps/backend/src/lib/ai-engine.ts`
-
-**Model:** DeepSeek Chat v3.1 via OpenRouter (`deepseek/deepseek-chat-v3.1:free`)
-
-The AI engine is the bridge between the feature services and the LLM. It:
-
-1. Initializes the OpenRouter client (OpenAI SDK) lazily with `OPENROUTER_API_KEY` from env
-2. Selects the system prompt based on the operation
-3. Sends the user's input with `temperature: 0.3` and `response_format: { type: 'json_object' }` (forces valid JSON output)
-4. Parses the raw LLM response, validates it against a Zod schema, and returns a typed object
-
-```
-Feature Service → aiEngine.analyzeResume(text)
-                    ↓
-                  callAI(systemPrompt, userMessage)
-                    ↓
-                    createAIClient(apiKey)  →  OpenAI SDK → OpenRouter
-                    ↓
-                  client.chat.completions.create({ model, messages, temperature, response_format })
-                    ↓
-                  parseAIResponse(text, resumeAnalysisSchema)
-                    ↓
-                  Typed result (z.infer<typeof resumeAnalysisSchema>)
-```
-
-Available operations:
-
-| Method                                    | Prompt                   | Output Schema                                                  |
-| ----------------------------------------- | ------------------------ | -------------------------------------------------------------- |
-| `analyzeResume(resumeText)`               | `RESUME_ANALYSIS_PROMPT` | `resumeAnalysisSchema` (score, keywords, issues, ATS rating)   |
-| `analyzeJD(jdText)`                       | `JOB_DESCRIPTION_PROMPT` | `jobDescriptionSchema` (skills, responsibilities, tech stack)  |
-| `analyzeSkillGap(resumeText, jdText)`     | `SKILL_GAP_PROMPT`       | `skillGapSchema` (match %, missing skills, recommendations)    |
-| `generateQuestions(jdText, count)`        | `QUESTION_GEN_PROMPT`    | `questionSchema` (questions with difficulty, type, key points) |
-| `generateStudyPlan(gapText, goal, weeks)` | `STUDY_PLAN_PROMPT`      | `studyPlanSchema` (weekly plans, resources, milestones)        |
-
-**Interview takeaway:**
-
-- `response_format: { type: 'json_object' }` asks the model to return valid JSON — no markdown fences to strip.
-- System prompt via `messages[0].role = 'system'` is the standard chat role format.
-- Low temperature (0.3) for deterministic structured output.
-- Structured outputs via Zod — the AI can return anything, so we validate before the app touches it.
-
-### ✅ Step 4 — Feature Services (Business Logic)
-
-**Files:** `apps/backend/src/services/*-service.ts`
-
-Each controller delegates to a service, which composes the AI engine + repositories:
-
-```
-Controller → Service → aiEngine (AI analysis)
-                       → Repository → MongoDB (persistence)
-```
-
-| Service              | AI Operation                                           | Repository            |
-| -------------------- | ------------------------------------------------------ | --------------------- |
-| `resume-service`     | `aiEngine.analyzeResume(text)` → stores parsed content | `resumeRepository`    |
-| `jd-service`         | `aiEngine.analyzeJD(text)` → stores structured data    | `jdRepository`        |
-| `analysis-service`   | `aiEngine.analyzeSkillGap(resume, jd)`                 | reads from both repos |
-| `questions-service`  | `aiEngine.generateQuestions(jdText)`                   | reads JD from repo    |
-| `study-plan-service` | `aiEngine.generateStudyPlan(gaps, goal)`               | standalone (no DB)    |
-
-**Complete data flow for a resume upload:**
+### Complete Resume Upload Flow
 
 ```
 POST /api/v1/resume/upload (multipart file)
-  → upload middleware (multer saves to ./uploads/)
+  → upload middleware (Multer, validates type + size, saves to ./uploads/)
   → resumeController.upload()
     → resumeService.processUpload(file)
-      → extractText(filePath, mimeType)     // PDF → pdf-parse, DOCX → mammoth
-      → aiEngine.analyzeResume(text)        // OpenRouter → structured JSON
-      → resumeRepository.create({...})      // Mongoose → MongoDB
-      → resume.save({ parsedContent })      // update with AI result
+      → extractText(filePath, mimeType)   // PDF → pdf-parse, DOCX → mammoth
+      → aiEngine.analyzeResume(text)      // OpenRouter → structured JSON
+      → resumeRepository.create({...})    // Save to MongoDB
       → return resume
 ```
 
-**Text extraction** (`utils/text-extractor.ts`):
+### Skill Gap Analysis Flow
 
-- PDF → `pdf-parse` v2 (async, parses text + metadata)
-- DOCX/DOC → `mammoth` (extracts raw text)
-- Throws on unsupported types
-
-**Interview takeaways:**
-
-- Services are the "brain" — they orchestrate, they don't deal with HTTP or raw DB.
-- Controllers stay thin: parse the request, call a service, return the response.
-- This layered architecture makes each piece independently testable and swappable.
+```
+POST /api/v1/analysis/skill-gap { resumeId, jdId }
+  → analysisController.analyzeSkillGap()
+    → analysisService.analyzeSkillGap({ resumeId, jdId })
+      → resumeRepository.findById(resumeId)    // Load resume
+      → jdRepository.findById(jdId)            // Load JD
+      → aiEngine.analyzeSkillGap(resumeText, jdText)  // AI comparison
+      → return SkillGapResult
+```
 
 ---
 
-### ✅ Step 5 — Frontend API Client & Dashboard Pages
+## Frontend - Key Patterns
 
-**File:** `apps/frontend/src/lib/api-client.ts`
+### API Client (`src/lib/api-client.ts`)
 
-A typed API client that wraps all backend endpoints with proper TypeScript interfaces:
+A typed API client class that wraps all 12 backend endpoints. Key features:
+- Uses `NEXT_PUBLIC_API_URL` (default `http://localhost:4000/api/v1`)
+- Typed `APIError` class with `status`, `code`, `message`, optional `details`
+- Methods organized by domain: `api.resume.*`, `api.jd.*`, `api.analysis.*`, `api.questions.*`, `api.studyPlan.*`
 
-| Method | Endpoint | Type |
-|--------|----------|------|
-| `api.resume.upload(file)` | `POST /resume/upload` (multipart) | `Promise<Resume>` |
-| `api.resume.list()` | `GET /resume` | `Promise<Resume[]>` |
-| `api.resume.get(id)` | `GET /resume/:id` | `Promise<Resume>` |
-| `api.resume.delete(id)` | `DELETE /resume/:id` | `Promise<void>` |
-| `api.jd.create(data)` | `POST /jd` | `Promise<JobDescription>` |
-| `api.jd.list()` | `GET /jd` | `Promise<JobDescription[]>` |
-| `api.jd.get(id)` | `GET /jd/:id` | `Promise<JobDescription>` |
-| `api.jd.delete(id)` | `DELETE /jd/:id` | `Promise<void>` |
-| `api.analysis.skillGap(data)` | `POST /analysis/skill-gap` | `Promise<SkillGapResult>` |
-| `api.analysis.resumeScore(data)` | `POST /analysis/resume-score` | `Promise<ResumeScoreResult>` |
-| `api.questions.generate(data)` | `POST /questions/generate` | `Promise<{ questions: Question[] }>` |
-| `api.studyPlan.generate(data)` | `POST /study-plan/generate` | `Promise<StudyPlan>` |
+### Data Fetching
 
-The client uses `NEXT_PUBLIC_API_URL` (default `http://localhost:4000/api/v1`) from frontend env. Errors are wrapped in a typed `APIError` class with `status`, `code`, `message`, and optional `details` for validation errors.
+TanStack React Query for server state. Configuration:
+- `staleTime: 5 * 60 * 1000` (5 minutes)
+- `retry: 1`
+- `refetchOnWindowFocus: false`
 
-**Dashboard Pages** (under `(dashboard)` route group):
+### Client State
 
-| Route | Page | Features |
-|-------|------|----------|
-| `/dashboard` | Overview | Stats cards linking to each tool |
-| `/resume` | Resume Upload | File upload (PDF/DOCX), list view, delete, ATS scoring |
-| `/job-description` | JD Input | Text input form, list view, structured data display |
-| `/analysis` | Skill Gap | Select resume + JD, match % breakdown, recommendations |
-| `/questions` | Questions | Select JD, configure count, filter by difficulty |
-| `/study-plan` | Study Plan | Goal/duration/focus area inputs, weekly plan display |
+Zustand stores for:
+- `resume-store.ts` — selected resume ID
+- `analysis-store.ts` — selected JD ID
+- `ui-store.ts` — sidebar open state
 
-**Interview takeaways:**
+---
 
-- **Typed API client** eliminates manual fetch setup and provides autocomplete across all endpoints.
-- **Error classification** — validation errors, not-found errors, and server errors are distinguished by code.
-- **Optimistic UI** — list pages add new items to local state immediately after successful creation.
-- **`(dashboard)` route group** keeps the sidebar layout scoped to authenticated (guest) tools without affecting the landing page.
+## Database Models
+
+### Resume
+| Field         | Type     | Description                    |
+| ------------- | -------- | ------------------------------ |
+| `userId`      | string?  | Optional user association      |
+| `fileName`    | string   | Original filename              |
+| `filePath`    | string   | Path on disk                   |
+| `fileSize`    | number   | Size in bytes                  |
+| `mimeType`    | string   | MIME type (pdf, docx)          |
+| `parsedContent`| object? | AI analysis result (ATS score, keywords, etc.) |
+| `createdAt`   | Date     | Auto-generated                 |
+| `updatedAt`   | Date     | Auto-generated                 |
+
+### Job Description
+| Field            | Type     | Description                    |
+| ---------------- | -------- | ------------------------------ |
+| `userId`         | string?  | Optional user association      |
+| `title`          | string   | Job title                      |
+| `company`        | string?  | Company name                   |
+| `rawText`        | string   | Raw JD text                    |
+| `structuredData` | object?  | AI-extracted structured data   |
+| `createdAt`      | Date     | Auto-generated                 |
+| `updatedAt`      | Date     | Auto-generated                 |
+
+---
+
+## AI Output Schemas
+
+All AI responses are validated against Zod schemas in `packages/ai/src/schemas/output.ts`:
+
+| Schema                   | Key Fields                                                                 |
+| ------------------------ | -------------------------------------------------------------------------- |
+| `resumeAnalysisSchema`   | overallScore, missingKeywords[], formattingIssues[], atsRating, improvements[] |
+| `jobDescriptionSchema`   | title, level?, requiredSkills[], preferredSkills[], responsibilities[], technologies[] |
+| `skillGapSchema`         | matchingSkills[], missingSkills[], matchPercentage, recommendations[], resumeSuggestions[] |
+| `questionSchema`         | questions[{ text, type, difficulty, skillTested, keyPoints[] }]           |
+| `studyPlanSchema`        | goal, totalWeeks, weeklyPlans[{ week, topic, duration, resources[], milestones[] }] |
+
+---
+
+## Security
+
+- **Helmet** with CSP including `frame-ancestors` set to `CORS_ORIGIN` (allows PDF iframe preview)
+- **CORS** configured with trailing-slash-stripped origin
+- **Multer** validates file type (PDF/DOCX only) and size (10MB max)
+- **Zod** validates all request bodies/query params
+- **No authentication in MVP** — `userId` is optional on all models
+
+---
+
+## Deployment
+
+| Service  | Host     | Config File        | Build Command                                       |
+| -------- | -------- | ------------------ | --------------------------------------------------- |
+| Frontend | Netlify  | `netlify.toml`     | `pnpm install && pnpm build && cp -r public/. .next/` |
+| Backend  | Render   | `render.yaml`      | `pnpm install --frozen-lockfile`                    |
+
+### Frontend (Netlify)
+- Publish directory: `apps/frontend/.next`
+- Global security headers via `[[headers]]`
+- Public assets copied to `.next/` during build for favicon to work
+
+### Backend (Render)
+- Free plan, Node runtime
+- Health check: `/health`
+- Secrets set via Render dashboard: `MONGODB_URI`, `OPENROUTER_API_KEY`, `CORS_ORIGIN`
+- Started with `pnpm --filter @career-copilot/api start:prod` (runs `tsx src/index.ts`)
+
+### CI (GitHub Actions)
+- Triggered on push/PR to `main`
+- Steps: install → lint → typecheck → build
+- Node 22, pnpm with caching
+
+---
+
+## Design System
+
+- **Brand:** Primary `#F97316` (orange-500), warm white `#fafaf9` (stone-50)
+- **Typography:** Playfair Display (serif headings), Inter (sans body)
+- **Components:** Built on Radix UI primitives via `packages/ui`
+- **Utility:** `cn()` from `packages/ui` (clsx + tailwind-merge)
+- **CSS:** Tailwind CSS v4 with `@import "tailwindcss"`, custom theme variables in `globals.css`

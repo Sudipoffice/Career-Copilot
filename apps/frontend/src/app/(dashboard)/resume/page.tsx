@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { FileText, Trash2, Loader2, CheckCircle2, XCircle, AlertCircle, Eye, Lightbulb, Shield, Target, Zap } from 'lucide-react';
+import { FileText, Trash2, CheckCircle2, XCircle, AlertCircle, Eye, Lightbulb, Shield, Target, Zap } from 'lucide-react';
 import { api, type Resume } from '@/lib/api-client';
 import { ScoreCard } from '@/components/ui/score-card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { FileUploadZone } from '@/components/ui/file-upload-zone';
 import { NextSteps } from '@/components/ui/next-steps';
+import { AnimatedSteps } from '@/components/ui/animated-steps';
 
 export default function ResumePage() {
   const [resumes, setResumes] = useState<Resume[]>([]);
@@ -60,7 +61,7 @@ export default function ResumePage() {
   const isPdf = selected?.mimeType === 'application/pdf';
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Resume Analysis</h2>
@@ -158,18 +159,15 @@ export default function ResumePage() {
         {selected && (
           <div className="lg:col-span-3">
             {scoring === selected._id && !selected.parsedContent ? (
-              <div className="rounded-2xl border border-border p-8 text-center space-y-3">
-                <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
-                <p className="text-sm font-medium">Analyzing your resume...</p>
-                <div className="flex justify-center gap-2">
-                  {['Parsing', 'Extracting', 'Scoring'].map((step, i) => (
-                    <span key={step} className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <span className={`h-1.5 w-1.5 rounded-full ${i < 2 ? 'bg-emerald-500' : 'bg-stone-300'}`} />
-                      {step}
-                    </span>
-                  ))}
-                </div>
-              </div>
+              <AnimatedSteps
+                messages={[
+                  'Parsing your resume content...',
+                  'Extracting skills and experience...',
+                  'Analyzing ATS compatibility...',
+                  'Checking keyword coverage...',
+                  'Generating improvement suggestions...',
+                ]}
+              />
             ) : (
               <div className="space-y-4">
                 <div className="flex items-center gap-2 border-b border-border pb-3">
@@ -281,7 +279,7 @@ export default function ResumePage() {
 
                   <NextSteps steps={[
                     { label: 'Add a Job Description', href: '/job-description' },
-                    { label: 'Run Skill Gap', href: '/analysis' },
+                    { label: 'Match with Job', href: '/job-description' },
                   ]} />
                 </>
               ) : (

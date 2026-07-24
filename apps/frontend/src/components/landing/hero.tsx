@@ -281,14 +281,14 @@ export function Hero() {
             </div>
 
             <div className="mt-10 flex items-center gap-8 text-sm text-muted-foreground">
-              <div className="flex -space-x-2">
+              {/* <div className="flex -space-x-2">
                 {[1, 2, 3, 4].map((i) => (
                   <div
                     key={i}
                     className="h-8 w-8 rounded-full border-2 border-white bg-gradient-to-br from-stone-200 to-stone-300"
                   />
                 ))}
-              </div>
+              </div> */}
               {/* <div>
                 <span className="font-semibold text-foreground">2,400+</span> job seekers this month
               </div> */}

@@ -165,12 +165,12 @@ export const api = {
   },
 
   questions: {
-    generate: (data: { jdId: string; count?: number; types?: string[] }) =>
+    generate: (data: { jdId?: string; resumeId?: string; count?: number; types?: string[] }) =>
       request<{ questions: Question[] }>('/questions/generate', { method: 'POST', body: JSON.stringify(data) }),
   },
 
   studyPlan: {
-    generate: (data: { goal: string; durationWeeks: number; focusAreas: string[] }) =>
+    generate: (data: { goal?: string; resumeId?: string; durationWeeks: number; focusAreas: string[] }) =>
       request<StudyPlan>('/study-plan/generate', { method: 'POST', body: JSON.stringify(data) }),
   },
 };

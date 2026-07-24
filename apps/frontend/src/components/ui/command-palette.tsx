@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, FileText, Building2, Target, HelpCircle, BookOpen, BarChart3, Command, ArrowRight } from 'lucide-react';
+import { Search, FileText, Building2, HelpCircle, BookOpen, BarChart3, Command, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface CommandItem {
@@ -18,7 +18,6 @@ const items: CommandItem[] = [
   { id: 'dashboard', label: 'Dashboard', description: 'Overview and career readiness score', href: '/dashboard', icon: BarChart3, keywords: ['home', 'overview', 'stats', 'readiness'] },
   { id: 'resume', label: 'Resume Analysis', description: 'Upload and analyze your resume', href: '/resume', icon: FileText, keywords: ['upload', 'ats', 'score', 'cv', 'parsing'] },
   { id: 'jd', label: 'Job Description', description: 'Paste and analyze job descriptions', href: '/job-description', icon: Building2, keywords: ['job', 'description', 'jd', 'requirements', 'company'] },
-  { id: 'analysis', label: 'Skill Gap Analysis', description: 'Compare resume against job requirements', href: '/analysis', icon: Target, keywords: ['skill', 'gap', 'match', 'comparison', 'missing'] },
   { id: 'questions', label: 'Interview Questions', description: 'Generate practice interview questions', href: '/questions', icon: HelpCircle, keywords: ['interview', 'practice', 'behavioral', 'technical'] },
   { id: 'study-plan', label: 'Study Plan', description: 'Create a personalized learning roadmap', href: '/study-plan', icon: BookOpen, keywords: ['learn', 'roadmap', 'schedule', 'topics', 'weeks'] },
 ];

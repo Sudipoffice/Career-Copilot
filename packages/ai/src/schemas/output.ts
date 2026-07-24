@@ -11,11 +11,11 @@ export const resumeAnalysisSchema = z.object({
 
 export const jobDescriptionSchema = z.object({
   title: z.string(),
-  level: z.string().optional(),
+  level: z.string().nullish(),
   requiredSkills: z.array(z.string()),
   preferredSkills: z.array(z.string()),
-  experienceRequired: z.string().optional(),
-  educationRequired: z.string().optional(),
+  experienceRequired: z.string().nullish(),
+  educationRequired: z.string().nullish(),
   responsibilities: z.array(z.string()),
   technologies: z.array(z.string()),
 });

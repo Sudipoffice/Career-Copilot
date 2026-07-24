@@ -8,35 +8,62 @@ The folder structure is designed for **scalability, discoverability, and maintai
 career-copilot-ai/
 ├── apps/
 │   ├── frontend/                     # Next.js 15 frontend
+│   │   ├── public/
+│   │   │   └── favicon.svg           # Site favicon
 │   │   ├── src/
 │   │   │   ├── app/
 │   │   │   │   ├── (dashboard)/
-│   │   │   │   │   ├── layout.tsx
-│   │   │   │   │   ├── dashboard/page.tsx
-│   │   │   │   │   ├── resume/page.tsx
-│   │   │   │   │   ├── job-description/page.tsx
-│   │   │   │   │   ├── analysis/page.tsx
-│   │   │   │   │   ├── questions/page.tsx
-│   │   │   │   │   └── study-plan/page.tsx
-│   │   │   │   ├── layout.tsx        # Root layout with fonts & metadata
-│   │   │   │   ├── page.tsx          # Landing page
-│   │   │   │   ├── error.tsx         # Error boundary
-│   │   │   │   ├── loading.tsx       # Loading state
+│   │   │   │   │   ├── layout.tsx                    # Dashboard layout wrapper
+│   │   │   │   │   ├── dashboard/page.tsx            # Overview with career readiness score
+│   │   │   │   │   ├── resume/page.tsx               # Resume upload, list, ATS analysis
+│   │   │   │   │   ├── job-description/page.tsx      # JD create/view/delete
+│   │   │   │   │   ├── analysis/page.tsx             # Skill gap analysis
+│   │   │   │   │   ├── questions/page.tsx            # Interview question generation
+│   │   │   │   │   └── study-plan/page.tsx           # Study plan generation
+│   │   │   │   ├── layout.tsx        # Root layout (fonts, metadata, Providers)
+│   │   │   │   ├── page.tsx          # Landing page (hero, how-it-works, features, FAQ, etc.)
+│   │   │   │   ├── error.tsx         # Global error boundary
+│   │   │   │   ├── loading.tsx       # Global loading state (spinner)
 │   │   │   │   └── not-found.tsx     # 404 page
 │   │   │   ├── components/
-│   │   │   │   ├── layout/           # Header, Sidebar, DashboardLayout
-│   │   │   │   └── providers/        # ThemeProvider, QueryProvider, etc.
-│   │   │   ├── features/              # Feature modules (future use)
-│   │   │   ├── hooks/                # Shared React hooks
-│   │   │   ├── services/             # API client & service functions
-│   │   │   ├── store/                # Zustand stores
-│   │   │   ├── lib/                  # Utility libraries (api-client.ts, utils.ts)
-│   │   │   ├── utils/                # Pure utility functions
-│   │   │   ├── constants/            # App constants
-│   │   │   ├── types/                # TypeScript types
-│   │   │   ├── styles/               # Global CSS
-│   │   │   ├── assets/               # Static assets
-│   │   │   └── config/               # Frontend config
+│   │   │   │   ├── dashboard/
+│   │   │   │   │   └── career-readiness-score.tsx    # Animated weighted score card
+│   │   │   │   ├── landing/
+│   │   │   │   │   ├── hero.tsx             # Full-screen hero with resume mockup & score widget
+│   │   │   │   │   ├── how-it-works.tsx     # 4-step process cards
+│   │   │   │   │   ├── features.tsx         # 6 core feature cards
+│   │   │   │   │   ├── feature-showcase.tsx # 4 deep-dive feature rows
+│   │   │   │   │   ├── questions-preview.tsx # Sample interview questions
+│   │   │   │   │   ├── study-plan-preview.tsx # Sample 14-day study plan
+│   │   │   │   │   ├── faq.tsx             # Accordion FAQ (6 items)
+│   │   │   │   │   ├── cta-banner.tsx      # Call-to-action banner
+│   │   │   │   │   ├── footer.tsx          # 4-column footer
+│   │   │   │   │   └── stats.tsx           # [Commented out] Fake data stats
+│   │   │   │   ├── layout/
+│   │   │   │   │   ├── dashboard-layout.tsx # Dashboard shell: sidebar + mobile header
+│   │   │   │   │   ├── sidebar.tsx         # Sticky nav sidebar (7 items with icons)
+│   │   │   │   │   └── site-header.tsx     # Landing page header (scroll-aware, dropdown)
+│   │   │   │   ├── providers/
+│   │   │   │   │   ├── providers.tsx       # QueryClient + Theme + Toast providers
+│   │   │   │   │   └── theme-provider.tsx  # Light/dark/system theme context
+│   │   │   │   └── ui/
+│   │   │   │       ├── command-palette.tsx  # Cmd+K search modal (6 dashboard items)
+│   │   │   │       ├── empty-state.tsx      # Reusable empty state placeholder
+│   │   │   │       ├── file-upload-zone.tsx # Drag-and-drop upload with validation/progress
+│   │   │   │       ├── info-banner.tsx      # Dismissable alert (info/success/warning/error)
+│   │   │   │       ├── next-steps.tsx       # Suggested next action links
+│   │   │   │       ├── score-card.tsx       # Animated score card with progress bar
+│   │   │   │       └── thinking-steps.tsx   # Multi-step animated progress indicator
+│   │   │   ├── features/              # Feature modules (all placeholders — actual impl in pages)
+│   │   │   ├── hooks/                 # Shared React hooks (use-resume-upload, use-analysis, use-debounce)
+│   │   │   ├── services/              # API client & service functions
+│   │   │   ├── store/                 # Zustand stores (resume-store, analysis-store, ui-store)
+│   │   │   ├── lib/                   # Typed API client (api-client.ts) + utils
+│   │   │   ├── utils/                 # Pure utility functions (date, file)
+│   │   │   ├── constants/             # ROUTES, QUERY_KEYS constants
+│   │   │   ├── types/                 # Re-exports from @career-copilot/types
+│   │   │   ├── styles/                # Global CSS (Tailwind v4 theme)
+│   │   │   └── config/                # Frontend config (env.ts with Zod, site.ts)
 │   │   ├── next.config.ts
 │   │   ├── postcss.config.mjs
 │   │   ├── tsconfig.json
@@ -44,29 +71,36 @@ career-copilot-ai/
 │   │
 │   └── backend/                      # Express REST API
 │       ├── src/
+│       │   ├── index.ts              # Entry point (loadEnv → connectDB → createApp → listen)
+│       │   ├── app.ts                # Express app factory (helmet, cors, middleware stack)
 │       │   ├── config/               # App configuration
-│       │   ├── controllers/          # Request handlers
-│       │   ├── services/             # Business logic
-│       │   ├── repositories/         # Data access layer
+│       │   ├── controllers/          # Request handlers (thin — delegates to services)
+│       │   │   ├── resume/
+│       │   │   ├── jd/
+│       │   │   ├── analysis/
+│       │   │   ├── questions/
+│       │   │   └── studyPlan/
+│       │   ├── services/             # Business logic orchestration
+│       │   ├── repositories/         # Data access layer (MongoDB queries)
 │       │   ├── routes/
-│       │   │   └── v1/               # API version 1 routes
-│       │   ├── middlewares/          # Express middleware
-│       │   ├── models/               # Mongoose models
-│       │   ├── interfaces/           # TypeScript interfaces
-│       │   ├── types/                # TypeScript types
-│       │   ├── utils/                # Utility functions
-│       │   ├── constants/            # API constants
-│       │   ├── lib/                  # Core libraries (db, ai-engine)
-│       │   └── storage/              # File storage abstraction
+│       │   │   └── v1/               # API version 1 route definitions
+│       │   ├── middlewares/          # Express middleware (error-handler, upload, validate)
+│       │   ├── models/               # Mongoose models (Resume, JobDescription)
+│       │   ├── interfaces/           # TypeScript interfaces (pagination, file upload)
+│       │   ├── types/                # AsyncRequestHandler type
+│       │   ├── utils/                # APIError class, text-extractor (PDF/DOCX)
+│       │   ├── lib/                  # Core libraries (ai-engine, db, logger)
+│       │   ├── storage/              # Abstract storage provider interface
+│       │   └── constants/            # Allowed types, max sizes, skill categories
 │       ├── tsconfig.json
 │       └── package.json
 │
 ├── packages/
 │   ├── ui/                           # Shared UI components
 │   │   └── src/
-│   │       ├── components/           # Button, Card, Input, etc.
-│   │       ├── utils/                # cn() helper
-│   │       ├── hooks/                # useMediaQuery, etc.
+│   │       ├── components/           # Button, Card, Input, Toast, etc.
+│   │       ├── utils/                # cn() helper (clsx + tailwind-merge)
+│   │       └── hooks/               # useMediaQuery, etc.
 │   │
 │   ├── shared/                       # Constants, utilities, helpers
 │   │   └── src/
@@ -76,56 +110,55 @@ career-copilot-ai/
 │   │   └── src/
 │   │       └── index.ts
 │   │
-│   ├── schemas/                      # Zod validation schemas
+│   ├── schemas/                      # Zod validation schemas (shared FE + BE)
 │   │   └── src/
-│   │       └── index.ts              # Env, Resume, JD, Analysis, etc.
+│   │       └── index.ts              # envSchema, jdCreateSchema, analysisRequestSchema, etc.
 │   │
-│   ├── config/                       # Environment & app config
+│   ├── config/                       # Environment & app configuration
 │   │   └── src/
-│   │       ├── index.ts              # loadEnv(), getEnv()
+│   │       ├── index.ts              # loadEnv(), getEnv() with Zod validation
 │   │       └── design-tokens.ts      # Design system tokens
 │   │
-│   └── ai/                           # AI prompts, schemas, parsers
+│   └── ai/                           # AI client, prompts, output schemas, parsers
 │       └── src/
-│           ├── index.ts
-│           ├── lib/client.ts         # OpenAI client factory
-│           ├── prompts/              # System prompts per feature
-│           ├── schemas/output.ts     # AI output JSON schemas
-│           └── utils/                # Parser utilities
+│           ├── index.ts              # Public API (callAI function)
+│           ├── lib/
+│           │   └── client.ts         # OpenAI SDK factory (OpenRouter endpoint)
+│           ├── prompts/              # 5 system prompts
+│           │   ├── resume.ts
+│           │   ├── job-description.ts
+│           │   ├── skill-gap.ts
+│           │   ├── questions.ts
+│           │   └── study-plan.ts
+│           ├── schemas/
+│           │   └── output.ts         # AI output Zod schemas (resumeAnalysis, skillGap, etc.)
+│           └── utils/
+│               └── index.ts          # Parser utilities
 │
 ├── docs/
 │   ├── ARCHITECTURE.md               # Architectural decisions
 │   ├── GETTING_STARTED.md            # Setup instructions
 │   └── FOLDER_STRUCTURE.md           # This file
 │
-├── .husky/                           # Git hooks
+├── .husky/                           # Git hooks (pre-commit, commit-msg)
 ├── .vscode/                          # VS Code settings
+├── .github/workflows/
+│   └── ci.yml                        # CI: lint → typecheck → build on Node 22
+├── netlify.toml                      # Frontend deployment config (Netlify)
+├── render.yaml                       # Backend deployment config (Render)
 ├── .editorconfig
-├── .env.example
+├── .env.example                      # All env vars with defaults
 ├── .gitignore
-├── .npmrc
+├── .npmrc                            # pnpm config (shamefully-hoist, auto-install-peers)
 ├── .prettierrc
 ├── .prettierignore
+├── .node-version                     # Node 20.18.0
 ├── commitlint.config.js
-├── eslint.config.js
+├── eslint.config.js                  # ESLint flat config (TS, React, Next.js)
 ├── lint-staged.config.js
-├── pnpm-workspace.yaml
+├── pnpm-workspace.yaml               # packages: ["apps/*", "packages/*"]
 ├── package.json
-└── tsconfig.json
-```
-
-### Feature Module Convention
-
-Each feature folder can contain:
-
-```
-features/resume/
-├── components/     # Feature-specific components
-├── hooks/          # Feature-specific hooks
-├── services/       # Feature-specific API calls
-├── schemas/        # Zod validation schemas
-├── types/          # Feature-specific types
-└── index.ts        # Barrel export
+└── tsconfig.json                     # Root TypeScript config
 ```
 
 ## Purpose of Each Top-Level Directory
@@ -139,20 +172,24 @@ features/resume/
 | `packages/types`   | Shared TypeScript type definitions     |
 | `packages/schemas` | Shared Zod validation schemas          |
 | `packages/config`  | Environment loading and configuration  |
-| `packages/ai`      | AI client, prompts, and output schemas |
+| `packages/ai`      | AI client, prompts, schemas, parsers   |
 | `docs`             | Architecture and usage documentation   |
 
 ## Configuration Files
 
 ```
 ├── pnpm-workspace.yaml    # pnpm workspace definition
-├── tsconfig.json           # Root TypeScript configuration
-├── eslint.config.js        # ESLint flat config
+├── tsconfig.json           # Root TypeScript configuration (ES2022, strict)
+├── eslint.config.js        # ESLint flat config (TS + React + Next.js)
 ├── .prettierrc             # Prettier configuration
 ├── .editorconfig           # Editor settings
-├── commitlint.config.js    # Commit message linting
+├── commitlint.config.js    # Conventional commit linting
+├── lint-staged.config.js   # Auto-format & lint on commit
 ├── .husky/                 # Git hooks
 │   ├── pre-commit          # Run lint-staged before commits
 │   └── commit-msg          # Validate commit messages
-└── .github/workflows/      # CI/CD pipelines (future)
+├── .github/workflows/      # CI/CD pipelines
+│   └── ci.yml              # Lint → typecheck → build on push/PR to main
+├── netlify.toml            # Netlify deployment (frontend)
+└── render.yaml             # Render deployment (backend)
 ```

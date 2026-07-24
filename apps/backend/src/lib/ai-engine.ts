@@ -68,8 +68,20 @@ export const aiEngine = {
     return parseAIResponse(text, questionSchema);
   },
 
+  async generateQuestionsFromResume(resumeText: string, count = 10) {
+    const userMessage = `Resume:\n${resumeText}\n\nBased on the skills and experience mentioned in this resume, generate ${count} practice interview questions.`;
+    const text = await callAI(QUESTION_GEN_PROMPT, userMessage);
+    return parseAIResponse(text, questionSchema);
+  },
+
   async generateStudyPlan(skillGapText: string, goal: string, weeks = 2) {
     const userMessage = `Skill Gaps:\n${skillGapText}\n\nGoal: ${goal}\nDuration: ${weeks} weeks`;
+    const text = await callAI(STUDY_PLAN_PROMPT, userMessage);
+    return parseAIResponse(text, aiStudyPlanSchema);
+  },
+
+  async generateStudyPlanFromResume(resumeText: string, goal: string, weeks: number, focusAreas: string[]) {
+    const userMessage = `Resume Context:\n${resumeText}\n\nGoal: ${goal || 'Career growth'}\nDuration: ${weeks} weeks\nFocus Areas: ${focusAreas.join(', ')}`;
     const text = await callAI(STUDY_PLAN_PROMPT, userMessage);
     return parseAIResponse(text, aiStudyPlanSchema);
   },

@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { BookOpen, Goal, Clock, CheckCircle2, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
-import { api, type StudyPlan } from '@/lib/api-client';
+import { api, type Resume, type StudyPlan } from '@/lib/api-client';
+import { AnimatedSteps } from '@/components/ui/animated-steps';
+import { FileUploadZone } from '@/components/ui/file-upload-zone';
 
 export default function StudyPlanPage() {
   const [goal, setGoal] = useState('');
@@ -12,6 +14,24 @@ export default function StudyPlanPage() {
   const [generating, setGenerating] = useState(false);
   const [plan, setPlan] = useState<StudyPlan | null>(null);
   const [error, setError] = useState('');
+  const [resumes, setResumes] = useState<Resume[]>([]);
+  const [selectedResume, setSelectedResume] = useState('');
+  const [loadingResumes, setLoadingResumes] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  const loadResumes = useCallback(async () => {
+    try {
+      const data = await api.resume.list();
+      setResumes(data);
+      if (data.length > 0) setSelectedResume(data[0]!._id);
+    } catch {
+    } finally {
+      setLoadingResumes(false);
+    }
+  }, []);
+
+  useEffect(() => { loadResumes(); }, [loadResumes]);
 
   const addFocusArea = () => {
     const trimmed = focusAreaInput.trim();
@@ -27,12 +47,17 @@ export default function StudyPlanPage() {
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!goal || focusAreas.length === 0) return;
+    if (focusAreas.length === 0) return;
     setGenerating(true);
     setError('');
     setPlan(null);
     try {
-      const result = await api.studyPlan.generate({ goal, durationWeeks, focusAreas });
+      const result = await api.studyPlan.generate({
+        goal: goal || undefined,
+        resumeId: selectedResume || undefined,
+        durationWeeks,
+        focusAreas,
+      });
       setPlan(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Generation failed');
@@ -41,8 +66,23 @@ export default function StudyPlanPage() {
     }
   };
 
+  const handleInlineUpload = async (file: File) => {
+    setUploading(true);
+    setUploadProgress(0);
+    setError('');
+    try {
+      const resume = await api.resume.uploadWithProgress(file, setUploadProgress);
+      setResumes((prev) => [resume, ...prev]);
+      setSelectedResume(resume._id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Study Plan</h2>
         <p className="text-muted-foreground mt-1">Generate a personalized learning roadmap</p>
@@ -55,17 +95,47 @@ export default function StudyPlanPage() {
         </div>
       )}
 
-      <div className={`grid lg:grid-cols-5 gap-6 ${!plan ? '' : ''}`}>
+      <div className={`grid lg:grid-cols-5 gap-6`}>
         <div className={`${!plan ? 'lg:col-span-5' : 'lg:col-span-2'}`}>
           <form onSubmit={handleGenerate} className="rounded-2xl border border-border p-6 space-y-4">
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Your Goal *</label>
+              <label className="text-sm font-medium mb-1.5 block">
+                Your Resume <span className="text-muted-foreground font-normal">(recommended)</span>
+              </label>
+              {loadingResumes ? (
+                <div className="h-10 rounded-xl bg-stone-100 animate-pulse" />
+              ) : resumes.length > 0 ? (
+                <select
+                  value={selectedResume}
+                  onChange={(e) => setSelectedResume(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                >
+                  <option value="">No resume selected</option>
+                  {resumes.map((r) => (
+                    <option key={r._id} value={r._id}>{r.fileName}</option>
+                  ))}
+                </select>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">No resume uploaded yet. Upload one now:</p>
+                  <FileUploadZone
+                    uploading={uploading}
+                    uploadProgress={uploadProgress}
+                    onFile={handleInlineUpload}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">
+                Your Goal <span className="text-muted-foreground font-normal">(optional)</span>
+              </label>
               <textarea
                 value={goal}
                 onChange={(e) => setGoal(e.target.value)}
                 placeholder="e.g. I want to become a Senior Frontend Engineer at a FAANG company"
                 rows={3}
-                required
                 className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors resize-y"
               />
             </div>
@@ -84,7 +154,7 @@ export default function StudyPlanPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Focus Areas</label>
+              <label className="text-sm font-medium mb-1.5 block">Focus Areas *</label>
               <div className="flex gap-2">
                 <input
                   value={focusAreaInput}
@@ -117,7 +187,7 @@ export default function StudyPlanPage() {
             <div className="flex justify-center">
               <button
                 type="submit"
-                disabled={generating || !goal || focusAreas.length === 0}
+                disabled={generating || focusAreas.length === 0}
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-primary px-8 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
               >
                 {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <BookOpen className="h-4 w-4" />}
@@ -129,18 +199,15 @@ export default function StudyPlanPage() {
 
         {generating && (
           <div className="lg:col-span-3">
-            <div className="rounded-2xl border border-border p-8 text-center space-y-3">
-              <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
-              <p className="text-sm font-medium">Building your study plan...</p>
-              <div className="flex justify-center gap-3">
-                {['Analyzing gaps', 'Planning', 'Curating'].map((step, i) => (
-                  <span key={step} className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <span className={`h-1.5 w-1.5 rounded-full ${i < 2 ? 'bg-emerald-500' : 'bg-stone-300'}`} />
-                    {step}
-                  </span>
-                ))}
-              </div>
-            </div>
+            <AnimatedSteps
+              messages={[
+                'Analyzing your skills and goals...',
+                'Identifying learning gaps...',
+                'Curating relevant resources...',
+                'Structuring weekly milestones...',
+                'Building your personalized roadmap...',
+              ]}
+            />
           </div>
         )}
 
