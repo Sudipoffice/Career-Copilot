@@ -36,6 +36,7 @@ async function callAI(systemPrompt: string, userMessage: string): Promise<string
       { role: 'user', content: userMessage },
     ],
     temperature: 0.3,
+    max_tokens: 2000,
     response_format: { type: 'json_object' },
   });
 
