@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import mammoth from 'mammoth';
 
-const MAX_TEXT_LENGTH = 20000;
+const MAX_TEXT_LENGTH = 15000;
 
 export async function extractText(filePath: string, mimeType: string): Promise<string> {
   const buffer = await fs.readFile(filePath);

@@ -2,9 +2,36 @@ import { resumeRepository } from '../repositories/resume-repository';
 import { aiEngine } from '../lib/ai-engine';
 import { extractText } from '../utils/text-extractor';
 import fs from 'fs/promises';
+import path from 'path';
+
+const UPLOADS_DIR = path.join(process.cwd(), 'uploads');
+const MAX_UPLOADS = 50;
 
 function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function cleanupOldUploads() {
+  try {
+    const files = await fs.readdir(UPLOADS_DIR);
+    if (files.length <= MAX_UPLOADS) return;
+    
+    const fileStats = await Promise.all(
+      files.map(async (f) => {
+        const stat = await fs.stat(path.join(UPLOADS_DIR, f));
+        return { name: f, mtime: stat.mtimeMs };
+      })
+    );
+    
+    fileStats.sort((a, b) => a.mtime - b.mtime);
+    const toDelete = fileStats.slice(0, fileStats.length - MAX_UPLOADS);
+    
+    await Promise.all(
+      toDelete.map(f => fs.unlink(path.join(UPLOADS_DIR, f.name)).catch(() => {}))
+    );
+  } catch {
+    // ignore cleanup errors
+  }
 }
 
 export const resumeService = {
@@ -14,6 +41,7 @@ export const resumeService = {
     const analysis = await aiEngine.analyzeResume(text);
 
     await sleep(100);
+    await cleanupOldUploads();
 
     const resume = await resumeRepository.create({
       fileName: file.originalname,
