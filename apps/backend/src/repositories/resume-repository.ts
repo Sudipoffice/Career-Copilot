@@ -7,6 +7,8 @@ type CreateResumeData = {
   mimeType: string;
 };
 
+const LIST_LIMIT = 20;
+
 export const resumeRepository = {
   async create(data: CreateResumeData): Promise<IResume> {
     const resume = await Resume.create(data);
@@ -14,7 +16,10 @@ export const resumeRepository = {
   },
 
   async findAll(): Promise<IResume[]> {
-    const resumes = await Resume.find().sort({ createdAt: -1 });
+    const resumes = await Resume.find()
+      .sort({ createdAt: -1 })
+      .limit(LIST_LIMIT)
+      .select('-parsedContent');
     return resumes;
   },
 

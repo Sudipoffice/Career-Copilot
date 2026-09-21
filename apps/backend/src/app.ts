@@ -29,9 +29,16 @@ export function createApp() {
   // Compression
   app.use(compression());
 
-  // Body parsing
-  app.use(express.json({ limit: '10mb' }));
-  app.use(express.urlencoded({ extended: true }));
+  // Body parsing - reduced limit
+  app.use(express.json({ limit: '1mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+  // Request timeout (30s)
+  app.use((req, res, next) => {
+    req.setTimeout(30000);
+    res.setTimeout(30000);
+    next();
+  });
 
   // Request ID
   app.use(requestId);

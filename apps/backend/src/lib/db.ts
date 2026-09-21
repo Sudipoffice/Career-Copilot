@@ -6,6 +6,7 @@ export async function connectDB() {
   try {
     await mongoose.connect(env.MONGODB_URI, {
       dbName: env.MONGODB_DB_NAME,
+      maxPoolSize: 5,
     });
     console.log('📦 MongoDB connected');
   } catch (error) {

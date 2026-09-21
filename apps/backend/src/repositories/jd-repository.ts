@@ -6,6 +6,8 @@ type CreateJDData = {
   rawText: string;
 };
 
+const LIST_LIMIT = 20;
+
 export const jdRepository = {
   async create(data: CreateJDData): Promise<IJobDescription> {
     const jd = await JobDescription.create(data);
@@ -13,7 +15,10 @@ export const jdRepository = {
   },
 
   async findAll(): Promise<IJobDescription[]> {
-    const jds = await JobDescription.find().sort({ createdAt: -1 });
+    const jds = await JobDescription.find()
+      .sort({ createdAt: -1 })
+      .limit(LIST_LIMIT)
+      .select('-rawText -structuredData');
     return jds;
   },
 

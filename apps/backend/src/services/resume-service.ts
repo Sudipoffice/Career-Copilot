@@ -42,6 +42,14 @@ export const resumeService = {
   },
 
   async delete(id: string) {
+    const resume = await resumeRepository.findById(id);
+    if (resume) {
+      try {
+        await fs.unlink(resume.filePath);
+      } catch {
+        // ignore if file already deleted
+      }
+    }
     await resumeRepository.deleteById(id);
   },
 };
