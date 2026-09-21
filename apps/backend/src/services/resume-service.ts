@@ -3,11 +3,17 @@ import { aiEngine } from '../lib/ai-engine';
 import { extractText } from '../utils/text-extractor';
 import fs from 'fs/promises';
 
+function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export const resumeService = {
   async processUpload(file: Express.Multer.File) {
     const text = await extractText(file.path, file.mimetype);
 
     const analysis = await aiEngine.analyzeResume(text);
+
+    await sleep(100);
 
     const resume = await resumeRepository.create({
       fileName: file.originalname,
