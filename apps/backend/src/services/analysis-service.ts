@@ -12,17 +12,25 @@ export const analysisService = {
     const jd = await jdRepository.findById(data.jdId);
     if (!jd) throw new Error('Job description not found');
 
-    const resumeText = await extractText(resume.filePath, resume.mimeType);
-
-    return aiEngine.analyzeSkillGap(resumeText, jd.rawText);
+    try {
+      const resumeText = await extractText(resume.filePath, resume.mimeType);
+      return aiEngine.analyzeSkillGap(resumeText, jd.rawText);
+    } catch (err) {
+      console.error('Skill gap analysis failed:', err);
+      throw new Error('Failed to analyze skill gap');
+    }
   },
 
   async scoreResume(data: { resumeId: string }) {
     const resume = await resumeRepository.findById(data.resumeId);
     if (!resume) throw new Error('Resume not found');
 
-    const resumeText = await extractText(resume.filePath, resume.mimeType);
-
-    return aiEngine.analyzeResume(resumeText);
+    try {
+      const resumeText = await extractText(resume.filePath, resume.mimeType);
+      return aiEngine.analyzeResume(resumeText);
+    } catch (err) {
+      console.error('Resume scoring failed:', err);
+      throw new Error('Failed to score resume');
+    }
   },
 };

@@ -36,24 +36,29 @@ async function cleanupOldUploads() {
 
 export const resumeService = {
   async processUpload(file: Express.Multer.File) {
-    const text = await extractText(file.path, file.mimetype);
+    try {
+      const text = await extractText(file.path, file.mimetype);
 
-    const analysis = await aiEngine.analyzeResume(text);
+      const analysis = await aiEngine.analyzeResume(text);
 
-    await sleep(100);
-    await cleanupOldUploads();
+      await sleep(100);
+      await cleanupOldUploads();
 
-    const resume = await resumeRepository.create({
-      fileName: file.originalname,
-      filePath: file.path,
-      fileSize: file.size,
-      mimeType: file.mimetype,
-    });
+      const resume = await resumeRepository.create({
+        fileName: file.originalname,
+        filePath: file.path,
+        fileSize: file.size,
+        mimeType: file.mimetype,
+      });
 
-    resume.parsedContent = analysis as unknown as Record<string, unknown>;
-    await resume.save();
+      resume.parsedContent = analysis as unknown as Record<string, unknown>;
+      await resume.save();
 
-    return resume;
+      return resume;
+    } catch (err) {
+      console.error('Resume upload processing failed:', err);
+      throw new Error('Failed to process resume upload');
+    }
   },
 
   async list() {

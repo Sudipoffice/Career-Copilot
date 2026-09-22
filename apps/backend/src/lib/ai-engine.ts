@@ -29,31 +29,22 @@ async function callAI(systemPrompt: string, userMessage: string): Promise<string
   const client = getAIClient();
   const modelName = getEnv().AI_MODEL;
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 60000);
+  const response = await client.chat.completions.create({
+    model: modelName,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMessage },
+    ],
+    temperature: 0.3,
+    max_tokens: 1500,
+    response_format: { type: 'json_object' },
+  });
 
-  try {
-    const response = await client.chat.completions.create({
-      model: modelName,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage },
-      ],
-      temperature: 0.3,
-      max_tokens: 1500,
-      response_format: { type: 'json_object' },
-    }, {
-      signal: controller.signal,
-    });
-
-    const text = response.choices[0]?.message?.content;
-    if (!text) {
-      throw new Error('AI returned empty response');
-    }
-    return text;
-  } finally {
-    clearTimeout(timeout);
+  const text = response.choices[0]?.message?.content;
+  if (!text) {
+    throw new Error('AI returned empty response');
   }
+  return text;
 }
 
 function stripNulls(obj: unknown): unknown {
